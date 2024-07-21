@@ -1,0 +1,17 @@
+[package]
+name = "nerdpanel"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.7.5", features = ["macros"] }
+axum-login = "0.15.3"
+sqlx = { version = "0.7", features = ["chrono", "postgres", "runtime-tokio", "tls-native-tls", "uuid"] }
+serde = "1.0.204"
+thiserror = "1.0.61"
+tokio = { version = "1.38.0", features = ["full"] }
+tracing-subscriber = "0.3.18"
+uuid = { version = "1.10.0", features = ["serde", "v4"] }
+chrono = "0.4.38"
+password-auth = "1.0.0"
+tracing = "0.1.40"
