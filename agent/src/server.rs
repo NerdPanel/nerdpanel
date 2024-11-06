@@ -4,7 +4,7 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use bollard::container::{CreateContainerOptions, InspectContainerOptions, NetworkingConfig};
+use bollard::container::{Config, CreateContainerOptions};
 use common::{agent_types::{ServerSignal, ServerStatus}, models::Server};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
@@ -102,7 +102,7 @@ pub async fn create(State(state): State<AppState>, Json(body): Json<Server>) -> 
                 name: container_name(body.id),
                 platform: None
             }),
-            bollard::container::Config {
+            Config {
                 image: Some(format!("itzg/minecraft-server")),
                 tty: Some(true),
                 open_stdin: Some(true),
@@ -120,7 +120,7 @@ pub async fn create(State(state): State<AppState>, Json(body): Json<Server>) -> 
     responses((status = OK, body = String), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = crate::routes::SERVER_TAG
 )]
-pub async fn delete(Path(id): Path<i32>) -> impl IntoResponse {
+pub async fn delete(Path(_id): Path<i32>) -> impl IntoResponse {
     // TODO delete volume, remove container, and more
     (StatusCode::OK, "OK".to_string()).into_response()
 }
@@ -132,7 +132,7 @@ pub async fn delete(Path(id): Path<i32>) -> impl IntoResponse {
     responses((status = OK, body = String), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = crate::routes::SERVER_TAG
 )]
-pub async fn install(Path(id): Path<i32>) -> impl IntoResponse {
+pub async fn install(Path(_id): Path<i32>) -> impl IntoResponse {
     // TODO
     (StatusCode::OK, "OK".to_string()).into_response()
 }
@@ -144,7 +144,7 @@ pub async fn install(Path(id): Path<i32>) -> impl IntoResponse {
     responses((status = OK, body = String), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = crate::routes::SERVER_TAG
 )]
-pub async fn update(Path(id): Path<i32>) -> impl IntoResponse {
+pub async fn update(Path(_id): Path<i32>) -> impl IntoResponse {
     // TODO
     (StatusCode::OK, "OK".to_string()).into_response()
 }
@@ -153,7 +153,7 @@ fn container_name(id: i32) -> String {
     format!("nerdpanel-server-{}", id)
 }
 
-fn get_folder(id: i32) -> String {
+fn _get_folder(id: i32) -> String {
     // TODO get from env
     format!("run/nerdpanel/volumes/{}", container_name(id))
 }
