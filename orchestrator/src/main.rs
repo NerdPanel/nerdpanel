@@ -5,7 +5,6 @@ use utoipa_axum::router::OpenApiRouter;
 use utoipa_swagger_ui::SwaggerUi;
 
 pub mod models;
-pub mod openapi;
 pub mod routes;
 pub mod services;
 pub mod utils;
@@ -32,3 +31,5 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
+
+// TODO add logs
