@@ -1,3 +1,4 @@
+use bollard::Docker;
 use routes::ApiDoc;
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
@@ -9,12 +10,16 @@ mod server;
 #[derive(Clone)]
 pub struct AppState {
     orchestrator_fqdn: String,
+    docker: Docker,
 }
 
 #[tokio::main]
 async fn main() {
+    let docker = Docker::connect_with_local_defaults().unwrap();
     let state = AppState {
+        // TODO: get orchestrator_fqdn from env
         orchestrator_fqdn: "http://localhost:3000".to_string(),
+        docker,
     };
 
     let app = OpenApiRouter::with_openapi(ApiDoc::openapi());

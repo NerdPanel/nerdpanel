@@ -18,7 +18,7 @@ pub async fn get_node_by_id(conn: &mut PgConnection, id: i32) -> Result<Node, sq
 
 pub async fn create_node(conn: &mut PgConnection, node: Node) -> Result<Node, sqlx::Error> {
     let node =
-        sqlx::query_as::<_, Node>("INSERT INTO nodes (name, fqdn) VALUES ($1, $2) RETURNING *")
+        sqlx::query_as::<_, Node>("INSERT INTO node (name, fqdn) VALUES ($1, $2) RETURNING *")
             .bind(node.name)
             .bind(node.fqdn)
             .fetch_one(&mut *conn)
@@ -28,7 +28,7 @@ pub async fn create_node(conn: &mut PgConnection, node: Node) -> Result<Node, sq
 
 pub async fn update_node(conn: &mut PgConnection, node: Node) -> Result<Node, sqlx::Error> {
     let node = sqlx::query_as::<_, Node>(
-        "UPDATE nodes SET name = $1, fqdn = $2 WHERE id = $3 RETURNING *",
+        "UPDATE node SET name = $1, fqdn = $2 WHERE id = $3 RETURNING *",
     )
     .bind(node.name)
     .bind(node.fqdn)
