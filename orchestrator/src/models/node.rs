@@ -27,14 +27,13 @@ pub async fn create_node(conn: &mut PgConnection, node: Node) -> Result<Node, sq
 }
 
 pub async fn update_node(conn: &mut PgConnection, node: Node) -> Result<Node, sqlx::Error> {
-    let node = sqlx::query_as::<_, Node>(
-        "UPDATE node SET name = $1, fqdn = $2 WHERE id = $3 RETURNING *",
-    )
-    .bind(node.name)
-    .bind(node.fqdn)
-    .bind(node.id)
-    .fetch_one(&mut *conn)
-    .await?;
+    let node =
+        sqlx::query_as::<_, Node>("UPDATE node SET name = $1, fqdn = $2 WHERE id = $3 RETURNING *")
+            .bind(node.name)
+            .bind(node.fqdn)
+            .bind(node.id)
+            .fetch_one(&mut *conn)
+            .await?;
     Ok(node)
 }
 

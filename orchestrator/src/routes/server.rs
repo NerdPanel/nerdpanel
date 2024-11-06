@@ -92,23 +92,22 @@ pub async fn create_server(
 ) -> impl IntoResponse {
     match server::create_server(&mut conn, server).await {
         Ok(server) => {
-            match get_node_from_server_id(server.id, &mut conn)
-                .await {
-                    Ok(node) => {
-                        reqwest::Client::new()
-                            .post(&format!("http://{}/server", node.fqdn))
-                            .json(&server)
-                            .send()
-                            .await
-                            .unwrap()
-                            .text()
-                            .await
-                            .unwrap();
-                    }
-                    Err(_e) => todo!(),
+            match get_node_from_server_id(server.id, &mut conn).await {
+                Ok(node) => {
+                    reqwest::Client::new()
+                        .post(&format!("http://{}/server", node.fqdn))
+                        .json(&server)
+                        .send()
+                        .await
+                        .unwrap()
+                        .text()
+                        .await
+                        .unwrap();
                 }
+                Err(_e) => todo!(),
+            }
             Json(server).into_response()
-        },
+        }
         Err(_e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             "Database error".to_string(),
@@ -129,23 +128,22 @@ pub async fn update_server(
 ) -> impl IntoResponse {
     match server::update_server(&mut conn, server).await {
         Ok(server) => {
-            match get_node_from_server_id(server.id, &mut conn)
-                .await {
-                    Ok(node) => {
-                        reqwest::Client::new()
-                            .put(&format!("http://{}/server", node.fqdn))
-                            .json(&server)
-                            .send()
-                            .await
-                            .unwrap()
-                            .text()
-                            .await
-                            .unwrap();
-                    }
-                    Err(_e) => todo!(),
+            match get_node_from_server_id(server.id, &mut conn).await {
+                Ok(node) => {
+                    reqwest::Client::new()
+                        .put(&format!("http://{}/server", node.fqdn))
+                        .json(&server)
+                        .send()
+                        .await
+                        .unwrap()
+                        .text()
+                        .await
+                        .unwrap();
                 }
+                Err(_e) => todo!(),
+            }
             Json(server).into_response()
-        },
+        }
         Err(_e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             "Database error".to_string(),
@@ -162,22 +160,17 @@ pub async fn update_server(
     tag = super::SERVER_TAG
 )]
 pub async fn delete_server(Path(id): Path<i32>, DbConn(mut conn): DbConn) -> StatusCode {
-    match server::delete_server(&mut conn, id).await {
-        Ok(_) => {
-            match get_node_from_server_id(id, &mut conn)
-                .await {
-                    Ok(node) => {
-                        reqwest::Client::new()
-                            .delete(&format!("http://{}/server/{}", node.fqdn, id))
-                            .send()
-                            .await
-                            .unwrap();
-                    }
-                    Err(_e) => todo!(),
-                }
+    match get_node_from_server_id(id, &mut conn).await {
+        Ok(node) => {
+            reqwest::Client::new()
+                .delete(&format!("http://{}/server/{}", node.fqdn, id))
+                .send()
+                .await
+                .unwrap();
+            server::delete_server(&mut conn, id).await.unwrap();
             StatusCode::OK
-        },
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+        Err(_) => todo!(),
     }
 }
 

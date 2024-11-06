@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 axum = { version = "0.7.7", features = ["macros"] }
 serde = { version = "1.0.213", features = ["derive"] }
-tokio = { version = "1.41.0", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.41.0", features = ["macros", "rt-multi-thread", "fs"] }
 utoipa = { version = "5.2.0", features = ["axum_extras"] }
 utoipa-axum = "0.1.2"
 utoipa-swagger-ui = { version = "8.0.3", features = ["axum"] }

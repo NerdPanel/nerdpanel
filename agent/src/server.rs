@@ -4,11 +4,18 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use bollard::container::{Config, CreateContainerOptions};
-use common::{agent_types::{ServerSignal, ServerStatus}, models::Server};
+use bollard::{
+    container::{Config, CreateContainerOptions},
+    secret::{HostConfig, Mount, MountTypeEnum, PortBinding},
+};
+use common::{
+    agent_types::{ServerSignal, ServerStatus},
+    models::Server,
+};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::AppState;
+use tokio::fs;
 
 pub fn server_routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
@@ -93,36 +100,82 @@ pub async fn signal(
     tag = crate::routes::SERVER_TAG
 )]
 pub async fn create(State(state): State<AppState>, Json(body): Json<Server>) -> impl IntoResponse {
-    // TODO create volume, pull container, expose port, and more
-    
+    // TODO pull container image
+
+    let folder_path = get_folder(body.id);
+    fs::create_dir_all(&folder_path).await.unwrap();
+    let folder_path = fs::canonicalize(&folder_path).await.unwrap();
+
+    let mut port_bindings = ::std::collections::HashMap::new();
+    port_bindings.insert(
+        format!("{}/tcp", body.port),
+        Some(vec![PortBinding {
+            host_ip: Some(body.ip),
+            host_port: Some(body.port.to_string()),
+        }]),
+    );
+    let host_config = HostConfig {
+        mounts: Some(vec![Mount {
+            target: Some(String::from("/data")),
+            source: Some(folder_path.to_string_lossy().to_string()),
+            typ: Some(MountTypeEnum::BIND),
+            consistency: Some(String::from("default")),
+            ..Default::default()
+        }]),
+        port_bindings: Some(port_bindings),
+        ..Default::default()
+    };
+        
+
     state
         .docker
         .create_container::<String, String>(
             Some(CreateContainerOptions {
                 name: container_name(body.id),
-                platform: None
+                platform: None,
             }),
             Config {
                 image: Some(format!("itzg/minecraft-server")),
                 tty: Some(true),
                 open_stdin: Some(true),
+                env: Some(vec![
+                    "EULA=TRUE".to_string(),
+                ]),
+                host_config: Some(host_config),
+                exposed_ports: {
+                    let mut map = ::std::collections::HashMap::new();
+                    map.insert(format!("{}/tcp", body.port), ::std::collections::HashMap::new());
+                    Some(map)
+                },
                 ..Default::default()
             },
-        ).await.unwrap();
+
+        )
+        .await
+        .unwrap();
 
     StatusCode::OK
 }
 
 #[utoipa::path(
     delete,
-    path = "/{id}/delete",
+    path = "/{id}",
     params(("id" = i32, Path, description = "server id")),
     responses((status = OK, body = String), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = crate::routes::SERVER_TAG
 )]
-pub async fn delete(Path(_id): Path<i32>) -> impl IntoResponse {
-    // TODO delete volume, remove container, and more
-    (StatusCode::OK, "OK".to_string()).into_response()
+pub async fn delete(Path(id): Path<i32>, State(state): State<AppState>) -> impl IntoResponse {
+
+    if state.docker.inspect_container(&container_name(id), None).await.unwrap().state.unwrap().running.unwrap() {
+        state.docker.stop_container(&container_name(id), None).await.unwrap();
+    }
+
+    state.docker.remove_container(&container_name(id), None).await.unwrap();
+
+    let folder_path = fs::canonicalize(get_folder(id)).await.unwrap();
+    fs::remove_dir_all(&folder_path).await.unwrap();
+
+    StatusCode::OK
 }
 
 #[utoipa::path(
@@ -153,7 +206,7 @@ fn container_name(id: i32) -> String {
     format!("nerdpanel-server-{}", id)
 }
 
-fn _get_folder(id: i32) -> String {
+fn get_folder(id: i32) -> String {
     // TODO get from env
     format!("run/nerdpanel/volumes/{}", container_name(id))
 }
