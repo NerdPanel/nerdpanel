@@ -1,0 +1,15 @@
+-- Node
+CREATE TABLE node (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    fqdn VARCHAR(255) NOT NULL
+);
+
+-- Server
+CREATE TABLE server (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    node_id INTEGER NOT NULL REFERENCES node(id),
+    ip VARCHAR(45) NOT NULL,
+    port INTEGER NOT NULL
+);
