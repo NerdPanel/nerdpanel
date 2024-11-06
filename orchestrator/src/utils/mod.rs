@@ -3,9 +3,16 @@ use axum::{
     extract::FromRequestParts,
     http::{request::Parts, StatusCode},
 };
+use common::models::Node;
 use sqlx::{pool::PoolConnection, Postgres};
 
-use crate::AppState;
+use crate::{
+    models::{
+        node::{self},
+        server::{self},
+    },
+    AppState,
+};
 
 pub struct DbConn(pub PoolConnection<Postgres>);
 
@@ -26,4 +33,13 @@ impl FromRequestParts<AppState> for DbConn {
 
         Ok(Self(conn))
     }
+}
+
+pub async fn get_node_from_server_id(
+    server_id: i32,
+    conn: &mut PoolConnection<Postgres>,
+) -> Result<Node, sqlx::Error> {
+    let server = server::get_server_by_id(conn, server_id).await?;
+    let node = node::get_node_by_id(conn, server.node_id).await?;
+    Ok(node)
 }
