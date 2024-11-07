@@ -7,7 +7,7 @@ use axum::{
 
 use common::{
     agent_types::{ServerSignal, ServerStatus},
-    models::Server,
+    orch_types::Server,
 };
 use utoipa_axum::{router::OpenApiRouter, routes};
 

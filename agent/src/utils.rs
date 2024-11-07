@@ -6,7 +6,7 @@ use bollard::{
     container::{Config, CreateContainerOptions},
     secret::{HostConfig, Mount, MountTypeEnum, PortBinding},
 };
-use common::models::Server;
+use common::orch_types::Server;
 use thiserror::Error;
 
 pub fn container_name(id: i32) -> String {
@@ -25,12 +25,21 @@ pub fn container_options(
 
     let mut port_bindings = ::std::collections::HashMap::new();
     port_bindings.insert(
-        format!("{}/tcp", server.port),
+        format!("{}/tcp", server.primary_port.port),
         Some(vec![PortBinding {
-            host_ip: Some(server.ip.clone()),
-            host_port: Some(server.port.to_string()),
+            host_ip: Some(server.primary_port.ip.clone()),
+            host_port: Some(server.primary_port.port.to_string()),
         }]),
     );
+    for port_binding in &server.additional_ports {
+        port_bindings.insert(
+            format!("{}/tcp", port_binding.port),
+            Some(vec![PortBinding {
+                host_ip: Some(port_binding.ip.clone()),
+                host_port: Some(port_binding.port.to_string()),
+            }]),
+        );
+    }
     let host_config = HostConfig {
         mounts: Some(vec![Mount {
             target: Some(String::from("/data")),
@@ -44,17 +53,20 @@ pub fn container_options(
     };
 
     let config = Config {
-        image: Some(format!("itzg/minecraft-server")),
+        image: Some("itzg/minecraft-server".to_string()),
         tty: Some(true),
         open_stdin: Some(true),
         env: Some(vec!["EULA=TRUE".to_string()]),
         host_config: Some(host_config),
         exposed_ports: {
             let mut map = ::std::collections::HashMap::new();
-            map.insert(
-                format!("{}/tcp", server.port),
-                ::std::collections::HashMap::new(),
-            );
+            map.insert(format!("{}/tcp", server.primary_port.port), ::std::collections::HashMap::new());
+            for port_binding in &server.additional_ports {
+                map.insert(
+                    format!("{}/tcp", port_binding.port),
+                    ::std::collections::HashMap::new(),
+                );
+            }
             Some(map)
         },
         ..Default::default()

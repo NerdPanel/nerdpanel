@@ -1,13 +1,13 @@
 use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
 use common::{
     agent_types::{ServerSignal, ServerStatus},
-    models::Server,
+    orch_types::Server,
 };
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
-    models::server::{self},
-    utils::{get_node_from_server_id, AppError, DbConn},
+    models::server::{self, CreateServer, UpdateServer},
+    utils::{get_node_from_server_id, server_model_to_server, AppError, DbConn},
     AppState,
 };
 
@@ -27,8 +27,17 @@ pub fn server_router() -> OpenApiRouter<AppState> {
     responses((status = OK, body = [Server]), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = super::SERVER_TAG
 )]
-pub async fn get_servers(DbConn(mut conn): DbConn) -> Result<impl IntoResponse, AppError> {
+pub async fn get_servers(DbConn(mut conn): DbConn) -> Result<Json<Vec<Server>>, AppError> {
     let servers = server::get_servers(&mut conn).await?;
+
+    let servers: Vec<Server> = {
+        let mut new = vec![];
+        for server in servers {
+            new.push(server_model_to_server(server, &mut conn).await?);
+        }
+        new
+    };
+    tracing::info!("Fetched {} servers", servers.len());
     Ok(Json(servers))
 }
 
@@ -42,8 +51,9 @@ pub async fn get_servers(DbConn(mut conn): DbConn) -> Result<impl IntoResponse, 
 pub async fn get_server(
     Path(id): axum::extract::Path<i32>,
     DbConn(mut conn): DbConn,
-) -> Result<impl IntoResponse, AppError> {
+) -> Result<Json<Server>, AppError> {
     let server = server::get_server_by_id(&mut conn, id).await?;
+    let server = server_model_to_server(server, &mut conn).await?;
     Ok(Json(server))
 }
 
@@ -57,8 +67,15 @@ pub async fn get_server(
 pub async fn get_servers_by_node_id(
     Path(node_id): Path<i32>,
     DbConn(mut conn): DbConn,
-) -> Result<impl IntoResponse, AppError> {
+) -> Result<Json<Vec<Server>>, AppError> {
     let servers = server::get_servers_by_node_id(&mut conn, node_id).await?;
+    let servers: Vec<Server> = {
+        let mut new = vec![];
+        for server in servers {
+            new.push(server_model_to_server(server, &mut conn).await?);
+        }
+        new
+    };
     Ok(Json(servers))
 }
 
@@ -70,16 +87,16 @@ pub async fn get_servers_by_node_id(
 )]
 pub async fn create_server(
     DbConn(mut conn): DbConn,
-    Json(server): Json<Server>,
-) -> Result<impl IntoResponse, AppError> {
+    Json(server): Json<CreateServer>,
+) -> Result<Json<Server>, AppError> {
     let server = server::create_server(&mut conn, server).await?;
     let node = get_node_from_server_id(server.id, &mut conn).await?;
+    let server = server_model_to_server(server, &mut conn).await?;
     reqwest::Client::new()
         .post(format!("http://{}/server", node.fqdn))
         .json(&server)
         .send()
         .await?;
-
     Ok(Json(server))
 }
 
@@ -91,10 +108,11 @@ pub async fn create_server(
 )]
 pub async fn update_server(
     DbConn(mut conn): DbConn,
-    Json(server): Json<Server>,
-) -> Result<impl IntoResponse, AppError> {
+    Json(server): Json<UpdateServer>,
+) -> Result<Json<Server>, AppError> {
     let server = server::update_server(&mut conn, server).await?;
     let node = get_node_from_server_id(server.id, &mut conn).await?;
+    let server = server_model_to_server(server, &mut conn).await?;
     reqwest::Client::new()
         .put(format!("http://{}/server", node.fqdn))
         .json(&server)
@@ -107,20 +125,20 @@ pub async fn update_server(
     delete,
     path = "/{id}",
     params(("id" = i32, Path, description = "server id")),
-    responses((status = OK, body = ()), (status = INTERNAL_SERVER_ERROR, body = String)),
+    responses((status = OK), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = super::SERVER_TAG
 )]
 pub async fn delete_server(
     Path(id): Path<i32>,
     DbConn(mut conn): DbConn,
-) -> Result<impl IntoResponse, AppError> {
+) -> Result<(), AppError> {
     let node = get_node_from_server_id(id, &mut conn).await?;
     reqwest::Client::new()
         .delete(format!("http://{}/server/{}", node.fqdn, id))
         .send()
         .await?;
     server::delete_server(&mut conn, id).await?;
-    Ok(StatusCode::OK)
+    Ok(())
 }
 
 #[utoipa::path(
@@ -134,13 +152,13 @@ pub async fn delete_server(
 pub async fn status(
     Path(id): Path<i32>,
     DbConn(mut conn): DbConn,
-) -> Result<impl IntoResponse, AppError> {
+) -> Result<Json<ServerStatus>, AppError> {
     let node = get_node_from_server_id(id, &mut conn).await?;
     let status: ServerStatus = reqwest::get(format!("http://{}/server/{}", node.fqdn, id))
         .await?
         .json()
         .await?;
-    Ok((StatusCode::OK, Json(status)).into_response())
+    Ok(Json(status))
 }
 
 #[utoipa::path(
@@ -154,14 +172,14 @@ pub async fn signal(
     Path(id): Path<i32>,
     DbConn(mut conn): DbConn,
     Json(body): Json<ServerSignal>,
-) -> Result<impl IntoResponse, AppError> {
+) -> Result<(), AppError> {
     let node = get_node_from_server_id(id, &mut conn).await?;
     reqwest::Client::new()
         .post(format!("http://{}/server/{}/signal", node.fqdn, id))
         .json(&body)
         .send()
         .await?;
-    Ok(StatusCode::OK)
+    Ok(())
 }
 
 // TODO DO THIS PROPERLY
