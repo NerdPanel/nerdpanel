@@ -63,13 +63,17 @@ impl From<sqlx::Error> for AppError {
     fn from(e: sqlx::Error) -> Self {
         match e {
             sqlx::Error::RowNotFound => Self::NotFound,
-            _ => Self::DatabaseError(e),
+            _ => {
+                tracing::error!("Database error: {:?}", e);
+                Self::DatabaseError(e)
+            }
         }
     }
 }
 
 impl From<reqwest::Error> for AppError {
     fn from(e: reqwest::Error) -> Self {
+        tracing::error!("Error connecting to agent: {:?}", e);
         Self::AgentRequestError(e)
     }
 }

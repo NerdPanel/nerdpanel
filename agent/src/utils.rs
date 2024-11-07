@@ -77,6 +77,7 @@ pub enum AppError {
 
 impl From<bollard::errors::Error> for AppError {
     fn from(e: bollard::errors::Error) -> Self {
+        tracing::error!("Docker error: {:?}", e);
         Self::DockerError(e)
     }
 }
