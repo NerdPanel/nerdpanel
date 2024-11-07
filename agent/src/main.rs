@@ -6,7 +6,7 @@ use utoipa_swagger_ui::SwaggerUi;
 
 mod routes;
 mod server;
-
+mod utils;
 #[derive(Clone)]
 pub struct AppState {
     orchestrator_fqdn: String,
