@@ -61,8 +61,10 @@ pub enum AppError {
 
 impl From<sqlx::Error> for AppError {
     fn from(e: sqlx::Error) -> Self {
-        // TODO 404
-        Self::DatabaseError(e)
+        match e {
+            sqlx::Error::RowNotFound => Self::NotFound,
+            _ => Self::DatabaseError(e),
+        }
     }
 }
 
