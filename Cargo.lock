@@ -22,9 +22,11 @@ name = "agent"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "axum_thiserror",
  "bollard",
  "common",
  "serde",
+ "thiserror 2.0.0",
  "tokio",
  "utoipa",
  "utoipa-axum",

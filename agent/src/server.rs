@@ -11,7 +11,10 @@ use common::{
 };
 use utoipa_axum::{router::OpenApiRouter, routes};
 
-use crate::{utils::{container_name, container_options, get_folder}, AppState};
+use crate::{
+    utils::{container_name, container_options, get_folder, AppError},
+    AppState,
+};
 use tokio::fs;
 
 pub fn server_routes() -> OpenApiRouter<AppState> {
@@ -28,18 +31,20 @@ pub fn server_routes() -> OpenApiRouter<AppState> {
     responses((status = OK, body = ServerStatus), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = crate::routes::SERVER_TAG
 )]
-pub async fn status(Path(id): Path<i32>, State(state): State<AppState>) -> impl IntoResponse {
+pub async fn status(
+    Path(id): Path<i32>,
+    State(state): State<AppState>,
+) -> Result<impl IntoResponse, AppError> {
     let res = state
         .docker
         .inspect_container(&container_name(id), None)
-        .await
-        .unwrap();
+        .await?;
     let status = if res.state.unwrap().running.unwrap() {
         ServerStatus::Running
     } else {
         ServerStatus::Stopped
     };
-    (StatusCode::OK, Json(status)).into_response()
+    Ok((StatusCode::OK, Json(status)))
 }
 
 #[utoipa::path(
@@ -53,38 +58,34 @@ pub async fn signal(
     Path(id): Path<i32>,
     State(state): State<AppState>,
     Json(body): Json<ServerSignal>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse, AppError> {
     match body {
         ServerSignal::Start => {
             state
                 .docker
                 .start_container::<String>(&container_name(id), None)
-                .await
-                .unwrap();
+                .await?;
         }
         ServerSignal::Stop => {
             state
                 .docker
                 .stop_container(&container_name(id), None)
-                .await
-                .unwrap();
+                .await?;
         }
         ServerSignal::Restart => {
             state
                 .docker
                 .restart_container(&container_name(id), None)
-                .await
-                .unwrap();
+                .await?;
         }
         ServerSignal::Kill => {
             state
                 .docker
                 .kill_container::<String>(&container_name(id), None)
-                .await
-                .unwrap();
+                .await?;
         }
     }
-    StatusCode::OK.into_response()
+    Ok(StatusCode::OK)
 }
 
 #[utoipa::path(
@@ -93,7 +94,10 @@ pub async fn signal(
     responses((status = OK, body = String), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = crate::routes::SERVER_TAG
 )]
-pub async fn create(State(state): State<AppState>, Json(body): Json<Server>) -> impl IntoResponse {
+pub async fn create(
+    State(state): State<AppState>,
+    Json(body): Json<Server>,
+) -> Result<impl IntoResponse, AppError> {
     // TODO pull container image
 
     let folder_path = get_folder(body.id);
@@ -103,10 +107,9 @@ pub async fn create(State(state): State<AppState>, Json(body): Json<Server>) -> 
     state
         .docker
         .create_container::<String, String>(options, config)
-        .await
-        .unwrap();
+        .await?;
 
-    StatusCode::OK
+    Ok(StatusCode::OK)
 }
 
 #[utoipa::path(
@@ -116,12 +119,14 @@ pub async fn create(State(state): State<AppState>, Json(body): Json<Server>) -> 
     responses((status = OK, body = String), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = crate::routes::SERVER_TAG
 )]
-pub async fn delete(Path(id): Path<i32>, State(state): State<AppState>) -> impl IntoResponse {
+pub async fn delete(
+    Path(id): Path<i32>,
+    State(state): State<AppState>,
+) -> Result<impl IntoResponse, AppError> {
     if state
         .docker
         .inspect_container(&container_name(id), None)
-        .await
-        .unwrap()
+        .await?
         .state
         .unwrap()
         .running
@@ -130,20 +135,18 @@ pub async fn delete(Path(id): Path<i32>, State(state): State<AppState>) -> impl 
         state
             .docker
             .stop_container(&container_name(id), None)
-            .await
-            .unwrap();
+            .await?;
     }
 
     state
         .docker
         .remove_container(&container_name(id), None)
-        .await
-        .unwrap();
+        .await?;
 
     let folder_path = fs::canonicalize(get_folder(id)).await.unwrap();
     fs::remove_dir_all(&folder_path).await.unwrap();
 
-    StatusCode::OK
+    Ok(StatusCode::OK)
 }
 
 #[utoipa::path(
@@ -153,9 +156,9 @@ pub async fn delete(Path(id): Path<i32>, State(state): State<AppState>) -> impl 
     responses((status = OK, body = String), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = crate::routes::SERVER_TAG
 )]
-pub async fn install(Path(_id): Path<i32>) -> impl IntoResponse {
+pub async fn install(Path(_id): Path<i32>) -> Result<impl IntoResponse, AppError> {
     // TODO
-    (StatusCode::OK, "OK".to_string()).into_response()
+    Ok(((StatusCode::OK), "OK".to_string()))
 }
 
 #[utoipa::path(
@@ -164,12 +167,14 @@ pub async fn install(Path(_id): Path<i32>) -> impl IntoResponse {
     responses((status = OK, body = String), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = crate::routes::SERVER_TAG
 )]
-pub async fn update(State(state): State<AppState>, Json(body): Json<Server>) -> impl IntoResponse {
+pub async fn update(
+    State(state): State<AppState>,
+    Json(body): Json<Server>,
+) -> Result<impl IntoResponse, AppError> {
     if state
         .docker
         .inspect_container(&container_name(body.id), None)
-        .await
-        .unwrap()
+        .await?
         .state
         .unwrap()
         .running
@@ -178,20 +183,19 @@ pub async fn update(State(state): State<AppState>, Json(body): Json<Server>) -> 
         state
             .docker
             .stop_container(&container_name(body.id), None)
-            .await
-            .unwrap();
+            .await?;
     }
 
     state
         .docker
         .remove_container(&container_name(body.id), None)
-        .await
-        .unwrap();
+        .await?;
 
     let (options, config) = container_options(&body);
     state
         .docker
         .create_container::<String, String>(options, config)
-        .await
-        .unwrap();
+        .await?;
+
+    Ok(StatusCode::OK)
 }

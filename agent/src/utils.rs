@@ -1,10 +1,13 @@
 use std::fs;
 
+use axum::http::StatusCode;
+use axum_thiserror::ErrorStatus;
 use bollard::{
     container::{Config, CreateContainerOptions},
     secret::{HostConfig, Mount, MountTypeEnum, PortBinding},
 };
 use common::models::Server;
+use thiserror::Error;
 
 pub fn container_name(id: i32) -> String {
     format!("nerdpanel-server-{}", id)
@@ -63,4 +66,17 @@ pub fn container_options(
     });
 
     (options, config)
+}
+
+#[derive(Error, Debug, ErrorStatus)]
+pub enum AppError {
+    #[error("Docker error")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
+    DockerError(bollard::errors::Error),
+}
+
+impl From<bollard::errors::Error> for AppError {
+    fn from(e: bollard::errors::Error) -> Self {
+        Self::DockerError(e)
+    }
 }
