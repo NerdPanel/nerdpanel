@@ -101,7 +101,7 @@ pub async fn update_server(
     userver: UpdateServer,
 ) -> Result<ServerModel, sqlx::Error> {
     let server = sqlx::query_as::<_, ServerModel>(
-        "UPDATE server SET name = $1, node_id = $2, cpu_limit = $3, memory_limit = $4, disk_limit = $5 WHERE id = $5 RETURNING *",
+        "UPDATE server SET name = $1, node_id = $2, cpu_limit = $3, memory_limit = $4, disk_limit = $5 WHERE id = $6 RETURNING *",
     )
     .bind(userver.name)
     .bind(userver.node_id)

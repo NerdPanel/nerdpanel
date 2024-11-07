@@ -71,7 +71,7 @@ pub async fn create_node_port(
     node_port: CreateNodePort,
 ) -> Result<NodePortModel, sqlx::Error> {
     let node_port = sqlx::query_as::<_, NodePortModel>(
-        "INSERT INTO node_port (node_id, ip, port) VALUES ($1, $2, $3) RETURNING *",
+        "INSERT INTO node_port (node_id, ip, port, is_primary) VALUES ($1, $2, $3, FALSE) RETURNING *",
     )
     .bind(node_id)
     .bind(node_port.ip)
