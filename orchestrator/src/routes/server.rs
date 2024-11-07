@@ -75,7 +75,7 @@ pub async fn create_server(
     let server = server::create_server(&mut conn, server).await?;
     let node = get_node_from_server_id(server.id, &mut conn).await?;
     reqwest::Client::new()
-        .post(&format!("http://{}/server", node.fqdn))
+        .post(format!("http://{}/server", node.fqdn))
         .json(&server)
         .send()
         .await?;
@@ -96,7 +96,7 @@ pub async fn update_server(
     let server = server::update_server(&mut conn, server).await?;
     let node = get_node_from_server_id(server.id, &mut conn).await?;
     reqwest::Client::new()
-        .put(&format!("http://{}/server", node.fqdn))
+        .put(format!("http://{}/server", node.fqdn))
         .json(&server)
         .send()
         .await?;
@@ -116,7 +116,7 @@ pub async fn delete_server(
 ) -> Result<impl IntoResponse, AppError> {
     let node = get_node_from_server_id(id, &mut conn).await?;
     reqwest::Client::new()
-        .delete(&format!("http://{}/server/{}", node.fqdn, id))
+        .delete(format!("http://{}/server/{}", node.fqdn, id))
         .send()
         .await?;
     server::delete_server(&mut conn, id).await?;
@@ -136,7 +136,7 @@ pub async fn status(
     DbConn(mut conn): DbConn,
 ) -> Result<impl IntoResponse, AppError> {
     let node = get_node_from_server_id(id, &mut conn).await?;
-    let status: ServerStatus = reqwest::get(&format!("http://{}/server/{}", node.fqdn, id))
+    let status: ServerStatus = reqwest::get(format!("http://{}/server/{}", node.fqdn, id))
         .await?
         .json()
         .await?;
@@ -157,7 +157,7 @@ pub async fn signal(
 ) -> Result<impl IntoResponse, AppError> {
     let node = get_node_from_server_id(id, &mut conn).await?;
     reqwest::Client::new()
-        .post(&format!("http://{}/server/{}/signal", node.fqdn, id))
+        .post(format!("http://{}/server/{}/signal", node.fqdn, id))
         .json(&body)
         .send()
         .await?;
@@ -180,7 +180,7 @@ pub async fn install(
 ) -> Result<impl IntoResponse, AppError> {
     let node = get_node_from_server_id(id, &mut conn).await?;
     let status = reqwest::Client::new()
-        .post(&format!("http://{}/server/{}/install", node.fqdn, id))
+        .post(format!("http://{}/server/{}/install", node.fqdn, id))
         .json(&body)
         .send()
         .await?
