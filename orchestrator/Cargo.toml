@@ -14,3 +14,5 @@ utoipa = { version = "5.2.0", features = ["axum_extras"] }
 utoipa-axum = "0.1.2"
 utoipa-swagger-ui = { version = "8.0.3", features = ["axum"] }
 common = { path = "../common" }
+axum_thiserror = "0.1.0"
+thiserror = "2.0.0"

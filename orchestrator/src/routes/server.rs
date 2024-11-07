@@ -7,7 +7,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
     models::server::{self},
-    utils::{get_node_from_server_id, DbConn},
+    utils::{get_node_from_server_id, AppError, DbConn},
     AppState,
 };
 
@@ -27,15 +27,9 @@ pub fn server_router() -> OpenApiRouter<AppState> {
     responses((status = OK, body = [Server]), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = super::SERVER_TAG
 )]
-pub async fn get_servers(DbConn(mut conn): DbConn) -> impl IntoResponse {
-    match server::get_servers(&mut conn).await {
-        Ok(servers) => Json(servers).into_response(),
-        Err(_e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Database error".to_string(),
-        )
-            .into_response(),
-    }
+pub async fn get_servers(DbConn(mut conn): DbConn) -> Result<impl IntoResponse, AppError> {
+    let servers = server::get_servers(&mut conn).await?;
+    Ok(Json(servers))
 }
 
 #[utoipa::path(
@@ -48,15 +42,9 @@ pub async fn get_servers(DbConn(mut conn): DbConn) -> impl IntoResponse {
 pub async fn get_server(
     Path(id): axum::extract::Path<i32>,
     DbConn(mut conn): DbConn,
-) -> impl IntoResponse {
-    match server::get_server_by_id(&mut conn, id).await {
-        Ok(server) => Json(server).into_response(),
-        Err(_e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Database error".to_string(),
-        )
-            .into_response(),
-    }
+) -> Result<impl IntoResponse, AppError> {
+    let server = server::get_server_by_id(&mut conn, id).await?;
+    Ok(Json(server))
 }
 
 #[utoipa::path(
@@ -69,15 +57,9 @@ pub async fn get_server(
 pub async fn get_servers_by_node_id(
     Path(node_id): Path<i32>,
     DbConn(mut conn): DbConn,
-) -> impl IntoResponse {
-    match server::get_servers_by_node_id(&mut conn, node_id).await {
-        Ok(servers) => Json(servers).into_response(),
-        Err(_e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Database error".to_string(),
-        )
-            .into_response(),
-    }
+) -> Result<impl IntoResponse, AppError> {
+    let servers = server::get_servers_by_node_id(&mut conn, node_id).await?;
+    Ok(Json(servers))
 }
 
 #[utoipa::path(
@@ -89,31 +71,16 @@ pub async fn get_servers_by_node_id(
 pub async fn create_server(
     DbConn(mut conn): DbConn,
     Json(server): Json<Server>,
-) -> impl IntoResponse {
-    match server::create_server(&mut conn, server).await {
-        Ok(server) => {
-            match get_node_from_server_id(server.id, &mut conn).await {
-                Ok(node) => {
-                    reqwest::Client::new()
-                        .post(&format!("http://{}/server", node.fqdn))
-                        .json(&server)
-                        .send()
-                        .await
-                        .unwrap()
-                        .text()
-                        .await
-                        .unwrap();
-                }
-                Err(_e) => todo!(),
-            }
-            Json(server).into_response()
-        }
-        Err(_e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Database error".to_string(),
-        )
-            .into_response(),
-    }
+) -> Result<impl IntoResponse, AppError> {
+    let server = server::create_server(&mut conn, server).await?;
+    let node = get_node_from_server_id(server.id, &mut conn).await?;
+    reqwest::Client::new()
+        .post(&format!("http://{}/server", node.fqdn))
+        .json(&server)
+        .send()
+        .await?;
+
+    Ok(Json(server))
 }
 
 #[utoipa::path(
@@ -125,31 +92,15 @@ pub async fn create_server(
 pub async fn update_server(
     DbConn(mut conn): DbConn,
     Json(server): Json<Server>,
-) -> impl IntoResponse {
-    match server::update_server(&mut conn, server).await {
-        Ok(server) => {
-            match get_node_from_server_id(server.id, &mut conn).await {
-                Ok(node) => {
-                    reqwest::Client::new()
-                        .put(&format!("http://{}/server", node.fqdn))
-                        .json(&server)
-                        .send()
-                        .await
-                        .unwrap()
-                        .text()
-                        .await
-                        .unwrap();
-                }
-                Err(_e) => todo!(),
-            }
-            Json(server).into_response()
-        }
-        Err(_e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Database error".to_string(),
-        )
-            .into_response(),
-    }
+) -> Result<impl IntoResponse, AppError> {
+    let server = server::update_server(&mut conn, server).await?;
+    let node = get_node_from_server_id(server.id, &mut conn).await?;
+    reqwest::Client::new()
+        .put(&format!("http://{}/server", node.fqdn))
+        .json(&server)
+        .send()
+        .await?;
+    Ok(Json(server))
 }
 
 #[utoipa::path(
@@ -159,19 +110,17 @@ pub async fn update_server(
     responses((status = OK, body = ()), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = super::SERVER_TAG
 )]
-pub async fn delete_server(Path(id): Path<i32>, DbConn(mut conn): DbConn) -> StatusCode {
-    match get_node_from_server_id(id, &mut conn).await {
-        Ok(node) => {
-            reqwest::Client::new()
-                .delete(&format!("http://{}/server/{}", node.fqdn, id))
-                .send()
-                .await
-                .unwrap();
-            server::delete_server(&mut conn, id).await.unwrap();
-            StatusCode::OK
-        }
-        Err(_) => todo!(),
-    }
+pub async fn delete_server(
+    Path(id): Path<i32>,
+    DbConn(mut conn): DbConn,
+) -> Result<impl IntoResponse, AppError> {
+    let node = get_node_from_server_id(id, &mut conn).await?;
+    reqwest::Client::new()
+        .delete(&format!("http://{}/server/{}", node.fqdn, id))
+        .send()
+        .await?;
+    server::delete_server(&mut conn, id).await?;
+    Ok(StatusCode::OK)
 }
 
 #[utoipa::path(
@@ -182,23 +131,16 @@ pub async fn delete_server(Path(id): Path<i32>, DbConn(mut conn): DbConn) -> Sta
     tag = super::SERVER_TAG
 
 )]
-pub async fn status(Path(id): Path<i32>, DbConn(mut conn): DbConn) -> impl IntoResponse {
-    match get_node_from_server_id(id, &mut conn).await {
-        Ok(node) => {
-            let status: ServerStatus = reqwest::get(&format!("http://{}/server/{}", node.fqdn, id))
-                .await
-                .unwrap()
-                .json()
-                .await
-                .unwrap();
-            (StatusCode::OK, Json(status)).into_response()
-        }
-        Err(_) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Database error".to_string(),
-        )
-            .into_response(),
-    }
+pub async fn status(
+    Path(id): Path<i32>,
+    DbConn(mut conn): DbConn,
+) -> Result<impl IntoResponse, AppError> {
+    let node = get_node_from_server_id(id, &mut conn).await?;
+    let status: ServerStatus = reqwest::get(&format!("http://{}/server/{}", node.fqdn, id))
+        .await?
+        .json()
+        .await?;
+    Ok((StatusCode::OK, Json(status)).into_response())
 }
 
 #[utoipa::path(
@@ -212,23 +154,14 @@ pub async fn signal(
     Path(id): Path<i32>,
     DbConn(mut conn): DbConn,
     Json(body): Json<ServerSignal>,
-) -> impl IntoResponse {
-    match get_node_from_server_id(id, &mut conn).await {
-        Ok(node) => {
-            reqwest::Client::new()
-                .post(&format!("http://{}/server/{}/signal", node.fqdn, id))
-                .json(&body)
-                .send()
-                .await
-                .unwrap();
-            StatusCode::OK.into_response()
-        }
-        Err(_) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Database error".to_string(),
-        )
-            .into_response(),
-    }
+) -> Result<impl IntoResponse, AppError> {
+    let node = get_node_from_server_id(id, &mut conn).await?;
+    reqwest::Client::new()
+        .post(&format!("http://{}/server/{}/signal", node.fqdn, id))
+        .json(&body)
+        .send()
+        .await?;
+    Ok(StatusCode::OK)
 }
 
 // TODO DO THIS PROPERLY
@@ -244,24 +177,14 @@ pub async fn install(
     Path(id): Path<i32>,
     DbConn(mut conn): DbConn,
     Json(body): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    match get_node_from_server_id(id, &mut conn).await {
-        Ok(node) => {
-            let status = reqwest::Client::new()
-                .post(&format!("http://{}/server/{}/install", node.fqdn, id))
-                .json(&body)
-                .send()
-                .await
-                .unwrap()
-                .text()
-                .await
-                .unwrap();
-            (StatusCode::OK, status).into_response()
-        }
-        Err(_) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Database error".to_string(),
-        )
-            .into_response(),
-    }
+) -> Result<impl IntoResponse, AppError> {
+    let node = get_node_from_server_id(id, &mut conn).await?;
+    let status = reqwest::Client::new()
+        .post(&format!("http://{}/server/{}/install", node.fqdn, id))
+        .json(&body)
+        .send()
+        .await?
+        .text()
+        .await?;
+    Ok((StatusCode::OK, status))
 }

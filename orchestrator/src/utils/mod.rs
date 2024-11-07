@@ -3,8 +3,10 @@ use axum::{
     extract::FromRequestParts,
     http::{request::Parts, StatusCode},
 };
+use axum_thiserror::ErrorStatus;
 use common::models::Node;
 use sqlx::{pool::PoolConnection, Postgres};
+use thiserror::Error;
 
 use crate::{
     models::{
@@ -42,4 +44,30 @@ pub async fn get_node_from_server_id(
     let server = server::get_server_by_id(conn, server_id).await?;
     let node = node::get_node_by_id(conn, server.node_id).await?;
     Ok(node)
+}
+
+#[derive(Error, Debug, ErrorStatus)]
+pub enum AppError {
+    #[error("Database error")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
+    DatabaseError(sqlx::Error),
+    #[error("not found")]
+    #[status(StatusCode::NOT_FOUND)]
+    NotFound,
+    #[error("error connecting to agent")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
+    AgentRequestError(reqwest::Error),
+}
+
+impl From<sqlx::Error> for AppError {
+    fn from(e: sqlx::Error) -> Self {
+        // TODO 404
+        Self::DatabaseError(e)
+    }
+}
+
+impl From<reqwest::Error> for AppError {
+    fn from(e: reqwest::Error) -> Self {
+        Self::AgentRequestError(e)
+    }
 }
