@@ -53,10 +53,23 @@ pub fn container_options(
     };
 
     let config = Config {
-        image: Some("itzg/minecraft-server".to_string()),
+        image: Some(server.image.clone()),
         tty: Some(true),
         open_stdin: Some(true),
-        env: Some(vec!["EULA=TRUE".to_string()]),
+        cmd: Some({
+            let mut cmd = vec![];
+            server.startup_command.split_ascii_whitespace().for_each(|s| {
+                cmd.push(s.to_string());
+            });
+            cmd
+        }),
+        env: Some({
+            let mut env = vec![];
+            for env_var in &server.env_vars {
+                env.push(format!("{}={}", env_var.key, env_var.value));
+            }
+            env
+        }),
         host_config: Some(host_config),
         exposed_ports: {
             let mut map = ::std::collections::HashMap::new();

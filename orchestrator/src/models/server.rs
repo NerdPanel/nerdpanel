@@ -1,3 +1,4 @@
+use common::orch_types::EnvVar;
 use serde::{Deserialize, Serialize};
 use sqlx::PgConnection;
 use utoipa::ToSchema;
@@ -13,6 +14,12 @@ pub struct ServerModel {
     pub cpu_limit: Option<i32>,
     pub memory_limit: Option<i32>,
     pub disk_limit: Option<i32>,
+
+    pub pod_id: i32,
+    pub image: String,
+    pub startup_command: String,    
+    pub env_vars: Vec<EnvVar>,
+
 }
 
 pub async fn get_servers(conn: &mut PgConnection) -> Result<Vec<ServerModel>, sqlx::Error> {
@@ -54,20 +61,32 @@ pub struct CreateServer {
 
     pub port: i32,
     pub additional_ports: Vec<i32>,
+
+    pub pod_id: i32,
+    pub image: String,
+    pub startup_command: String,
+    pub env_vars: Vec<EnvVar>,
 }
 
 pub async fn create_server(
     conn: &mut PgConnection,
     cserver: CreateServer,
 ) -> Result<ServerModel, sqlx::Error> {
+
+    // TODO verify image and env_vars
+
     let server = sqlx::query_as::<_, ServerModel>(
-        "INSERT INTO server (name, node_id, cpu_limit, memory_limit, disk_limit) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        "INSERT INTO server (name, node_id, cpu_limit, memory_limit, disk_limit, pod_id, image, startup_command, env_vars) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
     )
     .bind(cserver.name)
     .bind(cserver.node_id)
     .bind(cserver.cpu_limit)
     .bind(cserver.memory_limit)
     .bind(cserver.disk_limit)
+    .bind(cserver.pod_id)
+    .bind(cserver.image)
+    .bind(cserver.startup_command)
+    .bind(cserver.env_vars)
     .fetch_one(&mut *conn)
     .await?;
 
@@ -94,20 +113,32 @@ pub struct UpdateServer {
 
     pub port: i32,
     pub additional_ports: Vec<i32>,
+
+    pub pod_id: i32,
+    pub image: String,
+    pub startup_command: String,
+    pub env_vars: Vec<EnvVar>,
 }
 
 pub async fn update_server(
     conn: &mut PgConnection,
     userver: UpdateServer,
 ) -> Result<ServerModel, sqlx::Error> {
+
+    // TODO verify image and env_vars
+
     let server = sqlx::query_as::<_, ServerModel>(
-        "UPDATE server SET name = $1, node_id = $2, cpu_limit = $3, memory_limit = $4, disk_limit = $5 WHERE id = $6 RETURNING *",
+        "UPDATE server SET name = $1, node_id = $2, cpu_limit = $3, memory_limit = $4, disk_limit = $5, pod_id = $6, image = $7, startup_command = $8, env_vars = $9 WHERE id = $10 RETURNING *",
     )
     .bind(userver.name)
     .bind(userver.node_id)
     .bind(userver.cpu_limit)
     .bind(userver.memory_limit)
     .bind(userver.disk_limit)
+    .bind(userver.pod_id)
+    .bind(userver.image)
+    .bind(userver.startup_command)
+    .bind(userver.env_vars)
     .bind(userver.id)
     .fetch_one(&mut *conn)
     .await?;

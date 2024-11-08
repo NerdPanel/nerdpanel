@@ -61,6 +61,10 @@ pub async fn server_model_to_server(
         disk_limit: server.disk_limit,
         primary_port: is_primary.into(),
         additional_ports: additional_ports.into_iter().map(|port| port.into()).collect(),
+        pod_id: server.pod_id,
+        image: server.image,
+        startup_command: server.startup_command,
+        env_vars: server.env_vars,
     })
 }
 
