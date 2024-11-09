@@ -79,10 +79,7 @@ pub async fn update_user(
     responses((status = OK), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = super::USER_TAG
 )]
-pub async fn delete_user(
-    Path(id): Path<i32>,
-    DbConn(mut conn): DbConn,
-) -> Result<(), AppError> {
+pub async fn delete_user(Path(id): Path<i32>, DbConn(mut conn): DbConn) -> Result<(), AppError> {
     user::delete_user(&mut conn, id).await?;
     Ok(())
 }

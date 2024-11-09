@@ -3,12 +3,16 @@ use common::{
     agent_types::{ServerSignal, ServerStatus},
     orch_types::Server,
 };
-use utoipa_axum::{router::{OpenApiRouter, UtoipaMethodRouterExt}, routes};
+use utoipa_axum::{
+    router::{OpenApiRouter, UtoipaMethodRouterExt},
+    routes,
+};
 
 use crate::{
     models::server::{self, CreateServer, UpdateServer, UpdateServerStaff},
     utils::{
-        auth::{require_server_owner_staff, require_server_owner_staff_path, require_staff}, get_node_from_server_id, server_model_to_server, AppError, DbConn,
+        auth::{require_server_owner_staff, require_server_owner_staff_path, require_staff},
+        get_node_from_server_id, server_model_to_server, AppError, DbConn,
     },
     AppState,
 };
@@ -20,14 +24,20 @@ pub fn server_router(state: AppState) -> OpenApiRouter<AppState> {
         .routes(routes!(delete_server))
         .routes(routes!(get_servers_by_node_id))
         .route_layer(middleware::from_fn(require_staff));
-    
+
     OpenApiRouter::new()
         .routes(routes!(status))
         .routes(routes!(signal))
         .routes(routes!(install))
         .routes(routes!(get_server))
-        .route_layer(middleware::from_fn_with_state(state.clone(),require_server_owner_staff_path))
-        .routes(routes!(update_server).layer(middleware::from_fn_with_state(state, require_server_owner_staff)))
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            require_server_owner_staff_path,
+        ))
+        .routes(routes!(update_server).layer(middleware::from_fn_with_state(
+            state,
+            require_server_owner_staff,
+        )))
         .merge(staff_router)
         .routes(routes!(get_servers))
 }

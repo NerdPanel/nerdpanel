@@ -27,7 +27,7 @@ pub struct AuthBackend {
     pub db: PgPool,
 }
 
-#[derive(Deserialize,ToSchema)]
+#[derive(Deserialize, ToSchema)]
 pub struct Creds {
     pub username: String,
     pub password: String,

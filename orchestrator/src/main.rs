@@ -1,6 +1,9 @@
 use auth::AuthBackend;
 use axum::extract::Request;
-use axum_login::{tower_sessions::{MemoryStore, SessionManagerLayer}, AuthManagerLayerBuilder};
+use axum_login::{
+    tower_sessions::{MemoryStore, SessionManagerLayer},
+    AuthManagerLayerBuilder,
+};
 use routes::ApiDoc;
 use sqlx::PgPool;
 use tower_http::trace::TraceLayer;
@@ -52,15 +55,13 @@ async fn main() {
 
     let db = services::database::init_db().await;
 
-     // Session layer.
-     let session_store = MemoryStore::default();
-     let session_layer = SessionManagerLayer::new(session_store);
- 
-     // Auth service.
-     let backend = AuthBackend {
-            db: db.clone(),
-     };
-     let auth_layer = AuthManagerLayerBuilder::new(backend, session_layer).build();
+    // Session layer.
+    let session_store = MemoryStore::default();
+    let session_layer = SessionManagerLayer::new(session_store);
+
+    // Auth service.
+    let backend = AuthBackend { db: db.clone() };
+    let auth_layer = AuthManagerLayerBuilder::new(backend, session_layer).build();
 
     let state = AppState { db };
 

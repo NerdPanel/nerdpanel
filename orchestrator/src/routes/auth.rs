@@ -8,8 +8,7 @@ use crate::{
 };
 
 pub fn auth_router() -> OpenApiRouter<AppState> {
-    OpenApiRouter::new()
-        .routes(routes!(login, logout))
+    OpenApiRouter::new().routes(routes!(login, logout))
 }
 
 #[utoipa::path(

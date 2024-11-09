@@ -1,8 +1,16 @@
-
-use axum::{body::Body, extract::{Path, Request}, http::StatusCode, middleware::Next, response::Response};
+use axum::{
+    body::Body,
+    extract::{Path, Request},
+    http::StatusCode,
+    middleware::Next,
+    response::Response,
+};
 use http_body_util::BodyExt;
 
-use crate::{auth::AuthSession, models::server::{self, UpdateServer}};
+use crate::{
+    auth::AuthSession,
+    models::server::{self, UpdateServer},
+};
 
 use super::DbConn;
 
@@ -39,7 +47,7 @@ pub async fn require_server_owner_staff_path(
     } else {
         return Err(StatusCode::NOT_FOUND);
     }
-    
+
     let response = next.run(request).await;
     Ok(response)
 }
@@ -68,7 +76,7 @@ pub async fn require_server_owner_staff(
     } else {
         return Err(StatusCode::NOT_FOUND);
     }
-    
+
     let response = next.run(request).await;
     Ok(response)
 }

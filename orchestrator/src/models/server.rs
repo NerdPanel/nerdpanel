@@ -10,7 +10,7 @@ pub struct ServerModel {
     pub id: i32,
     pub name: String,
     pub node_id: i32,
-    pub owner_id : i32,
+    pub owner_id: i32,
 
     pub cpu_limit: Option<i32>,
     pub memory_limit: Option<i32>,
@@ -55,7 +55,7 @@ pub async fn get_servers_by_node_id(
 pub struct CreateServer {
     pub name: String,
     pub node_id: i32,
-    pub owner_id : i32,
+    pub owner_id: i32,
     pub cpu_limit: Option<i32>,
     pub memory_limit: Option<i32>,
     pub disk_limit: Option<i32>,
@@ -137,7 +137,7 @@ pub async fn update_server(
 pub struct UpdateServerStaff {
     pub id: i32,
     pub name: String,
-    pub owner_id : i32,
+    pub owner_id: i32,
 
     pub cpu_limit: Option<i32>,
     pub memory_limit: Option<i32>,
