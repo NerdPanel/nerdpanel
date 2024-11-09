@@ -94,6 +94,9 @@ pub async fn node_model_to_node(
 
 #[derive(Error, Debug, ErrorStatus)]
 pub enum AppError {
+    #[error("Internal Server Error")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
+    InternalServerError,
     #[error("Database error")]
     #[status(StatusCode::INTERNAL_SERVER_ERROR)]
     DatabaseError(sqlx::Error),
@@ -106,6 +109,12 @@ pub enum AppError {
     #[error("Node Error: {0}")]
     #[status(StatusCode::INTERNAL_SERVER_ERROR)]
     NodeError(String),
+    #[error("Internal server error")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
+    HashError,
+    #[error("Unauthorized")]
+    #[status(StatusCode::UNAUTHORIZED)]
+    Unauthorized,
 }
 
 impl From<sqlx::Error> for AppError {

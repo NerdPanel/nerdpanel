@@ -52,3 +52,12 @@ CREATE TABLE node_port (
     ip VARCHAR(45) NOT NULL,
     port INTEGER NOT NULL
 );
+
+-- User
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    pw_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    staff BOOLEAN NOT NULL
+);

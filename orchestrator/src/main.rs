@@ -1,4 +1,6 @@
+use auth::AuthBackend;
 use axum::extract::Request;
+use axum_login::{tower_sessions::{MemoryStore, SessionManagerLayer}, AuthManagerLayerBuilder};
 use routes::ApiDoc;
 use sqlx::PgPool;
 use tower_http::trace::TraceLayer;
@@ -8,6 +10,7 @@ use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_swagger_ui::SwaggerUi;
 
+pub mod auth;
 pub mod models;
 pub mod routes;
 pub mod services;
@@ -49,6 +52,16 @@ async fn main() {
 
     let db = services::database::init_db().await;
 
+     // Session layer.
+     let session_store = MemoryStore::default();
+     let session_layer = SessionManagerLayer::new(session_store);
+ 
+     // Auth service.
+     let backend = AuthBackend {
+            db: db.clone(),
+     };
+     let auth_layer = AuthManagerLayerBuilder::new(backend, session_layer).build();
+
     let state = AppState { db };
 
     let api_router = routes::api_router();
@@ -57,6 +70,7 @@ async fn main() {
     let app = app.nest("/api", api_router).with_state(state);
     let (app, api) = app.split_for_parts();
     let app = app.merge(SwaggerUi::new("/api").url("/api/openapi.json", api));
+    let app = app.layer(auth_layer);
     let app = app.layer(TraceLayer::new_for_http().make_span_with(|req: &Request| {
         let method = req.method();
         let uri = req.uri();
