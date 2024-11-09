@@ -46,6 +46,7 @@ pub struct Pod {
 pub struct Server {
     pub id: i32,
     pub name: String,
+    pub owner_id: i32,
     pub node_id: i32,
 
     pub cpu_limit: Option<i32>,

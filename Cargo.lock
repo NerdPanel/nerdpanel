@@ -1542,6 +1542,7 @@ dependencies = [
  "axum-login",
  "axum_thiserror",
  "common",
+ "http-body-util",
  "password-auth",
  "reqwest",
  "serde",

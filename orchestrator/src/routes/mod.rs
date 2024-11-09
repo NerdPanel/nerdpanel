@@ -1,7 +1,9 @@
+use axum::middleware;
+use axum_login::login_required;
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 
-use crate::AppState;
+use crate::{auth::AuthBackend, utils::auth::require_staff, AppState};
 
 pub mod auth;
 pub mod nodes;
@@ -27,11 +29,13 @@ const AUTH_TAG: &str = "auth";
 )]
 pub struct ApiDoc;
 
-pub fn api_router() -> OpenApiRouter<AppState> {
+pub fn api_router(state: AppState) -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .nest("/node", nodes::nodes_router())
-        .nest("/server", server::server_router())
         .nest("/pod", pod::pods_router())
         .nest("/user", user::user_router())
+        .route_layer(middleware::from_fn(require_staff))
+        .nest("/server", server::server_router(state))
+        .layer(login_required!(AuthBackend))
         .nest("/auth", auth::auth_router())
 }

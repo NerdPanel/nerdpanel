@@ -10,6 +10,7 @@ pub struct ServerModel {
     pub id: i32,
     pub name: String,
     pub node_id: i32,
+    pub owner_id : i32,
 
     pub cpu_limit: Option<i32>,
     pub memory_limit: Option<i32>,
@@ -54,6 +55,7 @@ pub async fn get_servers_by_node_id(
 pub struct CreateServer {
     pub name: String,
     pub node_id: i32,
+    pub owner_id : i32,
     pub cpu_limit: Option<i32>,
     pub memory_limit: Option<i32>,
     pub disk_limit: Option<i32>,
@@ -74,10 +76,11 @@ pub async fn create_server(
     // TODO verify image and env_vars
 
     let server = sqlx::query_as::<_, ServerModel>(
-        "INSERT INTO server (name, node_id, cpu_limit, memory_limit, disk_limit, pod_id, image, startup_command, env_vars) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
+        "INSERT INTO server (name, node_id, owner_id,cpu_limit, memory_limit, disk_limit, pod_id, image, startup_command, env_vars) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *",
     )
     .bind(cserver.name)
     .bind(cserver.node_id)
+    .bind(cserver.owner_id)
     .bind(cserver.cpu_limit)
     .bind(cserver.memory_limit)
     .bind(cserver.disk_limit)
@@ -103,14 +106,6 @@ pub async fn create_server(
 pub struct UpdateServer {
     pub id: i32,
     pub name: String,
-    pub node_id: i32,
-
-    pub cpu_limit: Option<i32>,
-    pub memory_limit: Option<i32>,
-    pub disk_limit: Option<i32>,
-
-    pub port: i32,
-    pub additional_ports: Vec<i32>,
 
     pub pod_id: i32,
     pub image: String,
@@ -125,10 +120,49 @@ pub async fn update_server(
     // TODO verify image and env_vars
 
     let server = sqlx::query_as::<_, ServerModel>(
-        "UPDATE server SET name = $1, node_id = $2, cpu_limit = $3, memory_limit = $4, disk_limit = $5, pod_id = $6, image = $7, startup_command = $8, env_vars = $9 WHERE id = $10 RETURNING *",
+        "UPDATE server SET name = $1, pod_id = $2, image = $3, startup_command = $4, env_vars = $5 WHERE id = $6 RETURNING *",
     )
     .bind(userver.name)
-    .bind(userver.node_id)
+    .bind(userver.pod_id)
+    .bind(userver.image)
+    .bind(userver.startup_command)
+    .bind(userver.env_vars)
+    .bind(userver.id)
+    .fetch_one(&mut *conn)
+    .await?;
+    Ok(server)
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct UpdateServerStaff {
+    pub id: i32,
+    pub name: String,
+    pub owner_id : i32,
+
+    pub cpu_limit: Option<i32>,
+    pub memory_limit: Option<i32>,
+    pub disk_limit: Option<i32>,
+
+    pub port: i32,
+    pub additional_ports: Vec<i32>,
+
+    pub pod_id: i32,
+    pub image: String,
+    pub startup_command: String,
+    pub env_vars: Vec<EnvVar>,
+}
+
+pub async fn update_server_staff(
+    conn: &mut PgConnection,
+    userver: UpdateServerStaff,
+) -> Result<ServerModel, sqlx::Error> {
+    // TODO verify image and env_vars
+
+    let server = sqlx::query_as::<_, ServerModel>(
+        "UPDATE server SET name = $1, owner_id=$2, cpu_limit = $3, memory_limit = $4, disk_limit = $5, pod_id = $6, image = $7, startup_command = $8, env_vars = $9 WHERE id = $10 RETURNING *",
+    )
+    .bind(userver.name)
+    .bind(userver.owner_id)
     .bind(userver.cpu_limit)
     .bind(userver.memory_limit)
     .bind(userver.disk_limit)

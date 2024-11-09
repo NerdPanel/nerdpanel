@@ -1,3 +1,12 @@
+-- User
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    pw_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    staff BOOLEAN NOT NULL
+);
+
 -- Node
 CREATE TABLE node (
     id SERIAL PRIMARY KEY,
@@ -32,6 +41,8 @@ CREATE TABLE server (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     node_id INTEGER NOT NULL REFERENCES node(id),
+    owner_id INTEGER NOT NULL REFERENCES users(id),
+
     cpu_limit INTEGER,
     memory_limit INTEGER,
     disk_limit INTEGER,
@@ -51,13 +62,4 @@ CREATE TABLE node_port (
     is_primary BOOLEAN NOT NULL,
     ip VARCHAR(45) NOT NULL,
     port INTEGER NOT NULL
-);
-
--- User
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(255) NOT NULL,
-    pw_hash VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    staff BOOLEAN NOT NULL
 );

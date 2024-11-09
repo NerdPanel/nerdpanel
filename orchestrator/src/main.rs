@@ -64,7 +64,7 @@ async fn main() {
 
     let state = AppState { db };
 
-    let api_router = routes::api_router();
+    let api_router = routes::api_router(state.clone());
 
     let app = OpenApiRouter::with_openapi(ApiDoc::openapi());
     let app = app.nest("/api", api_router).with_state(state);

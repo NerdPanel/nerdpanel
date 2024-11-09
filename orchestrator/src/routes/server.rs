@@ -1,24 +1,35 @@
-use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
+use axum::{extract::Path, http::StatusCode, middleware, response::IntoResponse, Json};
 use common::{
     agent_types::{ServerSignal, ServerStatus},
     orch_types::Server,
 };
-use utoipa_axum::{router::OpenApiRouter, routes};
+use utoipa_axum::{router::{OpenApiRouter, UtoipaMethodRouterExt}, routes};
 
 use crate::{
-    models::server::{self, CreateServer, UpdateServer},
-    utils::{get_node_from_server_id, server_model_to_server, AppError, DbConn},
+    models::server::{self, CreateServer, UpdateServer, UpdateServerStaff},
+    utils::{
+        auth::{require_server_owner_staff, require_server_owner_staff_path, require_staff}, get_node_from_server_id, server_model_to_server, AppError, DbConn,
+    },
     AppState,
 };
 
-pub fn server_router() -> OpenApiRouter<AppState> {
-    OpenApiRouter::new()
-        .routes(routes!(get_servers, create_server, update_server))
-        .routes(routes!(get_server, delete_server))
+pub fn server_router(state: AppState) -> OpenApiRouter<AppState> {
+    let staff_router = OpenApiRouter::new()
+        .routes(routes!(update_server_staff))
+        .routes(routes!(create_server))
+        .routes(routes!(delete_server))
         .routes(routes!(get_servers_by_node_id))
+        .route_layer(middleware::from_fn(require_staff));
+    
+    OpenApiRouter::new()
         .routes(routes!(status))
         .routes(routes!(signal))
         .routes(routes!(install))
+        .routes(routes!(get_server))
+        .route_layer(middleware::from_fn_with_state(state.clone(),require_server_owner_staff_path))
+        .routes(routes!(update_server).layer(middleware::from_fn_with_state(state, require_server_owner_staff)))
+        .merge(staff_router)
+        .routes(routes!(get_servers))
 }
 
 #[utoipa::path(
@@ -114,6 +125,30 @@ pub async fn update_server(
     Json(server): Json<UpdateServer>,
 ) -> Result<Json<Server>, AppError> {
     let server = server::update_server(&mut conn, server).await?;
+    let node = get_node_from_server_id(server.id, &mut conn).await?;
+    let server = server_model_to_server(server, &mut conn).await?;
+    let res = reqwest::Client::new()
+        .put(format!("http://{}/server", node.fqdn))
+        .json(&server)
+        .send()
+        .await?;
+    if res.status() != StatusCode::OK {
+        return Err(AppError::NodeError(res.text().await?));
+    }
+    Ok(Json(server))
+}
+
+#[utoipa::path(
+    put,
+    path = "/staff",
+    responses((status = OK, body = Server), (status = INTERNAL_SERVER_ERROR, body = String)),
+    tag = super::SERVER_TAG
+)]
+pub async fn update_server_staff(
+    DbConn(mut conn): DbConn,
+    Json(server): Json<UpdateServerStaff>,
+) -> Result<Json<Server>, AppError> {
+    let server = server::update_server_staff(&mut conn, server).await?;
     let node = get_node_from_server_id(server.id, &mut conn).await?;
     let server = server_model_to_server(server, &mut conn).await?;
     let res = reqwest::Client::new()

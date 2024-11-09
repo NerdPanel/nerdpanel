@@ -20,6 +20,8 @@ use crate::{
     AppState,
 };
 
+pub mod auth;
+
 pub struct DbConn(pub PoolConnection<Postgres>);
 
 #[async_trait]
@@ -61,6 +63,7 @@ pub async fn server_model_to_server(
         id: server.id,
         node_id: server.node_id,
         name: server.name,
+        owner_id: server.owner_id,
         cpu_limit: server.cpu_limit,
         memory_limit: server.memory_limit,
         disk_limit: server.disk_limit,
