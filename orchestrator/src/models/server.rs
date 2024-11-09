@@ -17,9 +17,8 @@ pub struct ServerModel {
 
     pub pod_id: i32,
     pub image: String,
-    pub startup_command: String,    
+    pub startup_command: String,
     pub env_vars: Vec<EnvVar>,
-
 }
 
 pub async fn get_servers(conn: &mut PgConnection) -> Result<Vec<ServerModel>, sqlx::Error> {
@@ -72,7 +71,6 @@ pub async fn create_server(
     conn: &mut PgConnection,
     cserver: CreateServer,
 ) -> Result<ServerModel, sqlx::Error> {
-
     // TODO verify image and env_vars
 
     let server = sqlx::query_as::<_, ServerModel>(
@@ -124,7 +122,6 @@ pub async fn update_server(
     conn: &mut PgConnection,
     userver: UpdateServer,
 ) -> Result<ServerModel, sqlx::Error> {
-
     // TODO verify image and env_vars
 
     let server = sqlx::query_as::<_, ServerModel>(

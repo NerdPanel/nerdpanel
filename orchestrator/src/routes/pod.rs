@@ -2,7 +2,11 @@ use axum::{extract::Path, Json};
 use common::orch_types::Pod;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
-use crate::{models::pod, utils::{AppError, DbConn}, AppState};
+use crate::{
+    models::pod,
+    utils::{AppError, DbConn},
+    AppState,
+};
 
 pub fn pods_router() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
@@ -72,10 +76,7 @@ pub async fn update_pod(
     responses((status = OK),(status = INTERNAL_SERVER_ERROR, body = String)),
     tag = super::POD_TAG
 )]
-pub async fn delete_pod(
-    DbConn(mut conn): DbConn,
-    Path(id): Path<u32>,
-) -> Result<(), AppError> {
+pub async fn delete_pod(DbConn(mut conn): DbConn, Path(id): Path<u32>) -> Result<(), AppError> {
     pod::delete_pod(&mut conn, id as i32).await?;
     Ok(())
 }

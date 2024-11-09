@@ -35,7 +35,7 @@ pub struct Image {
 #[derive(sqlx::FromRow, Serialize, Deserialize, ToSchema)]
 pub struct Pod {
     pub id: i32,
-    pub name: String,    
+    pub name: String,
     pub images: Vec<Image>,
     pub startup_command: String,
     pub installer_image: String,

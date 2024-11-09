@@ -4,8 +4,8 @@ use utoipa_axum::router::OpenApiRouter;
 use crate::AppState;
 
 pub mod nodes;
-pub mod server;
 pub mod pod;
+pub mod server;
 
 const NODE_TAG: &str = "node";
 const SERVER_TAG: &str = "server";

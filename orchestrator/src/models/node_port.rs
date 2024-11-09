@@ -17,10 +17,11 @@ pub async fn get_node_ports_by_node_id(
     conn: &mut PgConnection,
     node_id: i32,
 ) -> Result<Vec<NodePortModel>, sqlx::Error> {
-    let node_ports = sqlx::query_as::<_, NodePortModel>("SELECT * FROM node_port WHERE node_id = $1")
-        .bind(node_id)
-        .fetch_all(&mut *conn)
-        .await?;
+    let node_ports =
+        sqlx::query_as::<_, NodePortModel>("SELECT * FROM node_port WHERE node_id = $1")
+            .bind(node_id)
+            .fetch_all(&mut *conn)
+            .await?;
     Ok(node_ports)
 }
 
@@ -28,10 +29,11 @@ pub async fn get_node_ports_by_server_id(
     conn: &mut PgConnection,
     server_id: i32,
 ) -> Result<Vec<NodePortModel>, sqlx::Error> {
-    let node_ports = sqlx::query_as::<_, NodePortModel>("SELECT * FROM node_port WHERE server_id = $1")
-        .bind(server_id)
-        .fetch_all(&mut *conn)
-        .await?;
+    let node_ports =
+        sqlx::query_as::<_, NodePortModel>("SELECT * FROM node_port WHERE server_id = $1")
+            .bind(server_id)
+            .fetch_all(&mut *conn)
+            .await?;
     Ok(node_ports)
 }
 
@@ -140,7 +142,6 @@ impl From<NodePortModel> for NodePort {
             port: node_port.port,
         }
     }
-    
 }
 
 impl From<NodePortModel> for ServerNodePort {
@@ -151,5 +152,4 @@ impl From<NodePortModel> for ServerNodePort {
             port: node_port.port,
         }
     }
-    
 }

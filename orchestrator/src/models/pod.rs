@@ -5,7 +5,7 @@ use utoipa::ToSchema;
 #[derive(sqlx::FromRow, Serialize, Deserialize, ToSchema)]
 pub struct PodModel {
     pub id: i32,
-    pub name: String,    
+    pub name: String,
     pub images: Vec<Image>,
     pub startup_command: String,
     pub installer_image: String,
@@ -19,7 +19,10 @@ pub async fn get_pods(conn: &mut sqlx::PgConnection) -> Result<Vec<PodModel>, sq
     Ok(pods)
 }
 
-pub async fn get_pod_by_id(conn: &mut sqlx::PgConnection, id: i32) -> Result<PodModel, sqlx::Error> {
+pub async fn get_pod_by_id(
+    conn: &mut sqlx::PgConnection,
+    id: i32,
+) -> Result<PodModel, sqlx::Error> {
     let pod = sqlx::query_as::<_, PodModel>("SELECT * FROM pod WHERE id = $1")
         .bind(id)
         .fetch_one(&mut *conn)
@@ -27,11 +30,16 @@ pub async fn get_pod_by_id(conn: &mut sqlx::PgConnection, id: i32) -> Result<Pod
     Ok(pod)
 }
 
-pub async fn get_pod_for_server(conn: &mut sqlx::PgConnection, server_id: i32) -> Result<PodModel, sqlx::Error> {
-    let pod = sqlx::query_as::<_, PodModel>("SELECT * FROM pod WHERE id = (SELECT pod_id FROM server WHERE id = $1)")
-        .bind(server_id)
-        .fetch_one(&mut *conn)
-        .await?;
+pub async fn get_pod_for_server(
+    conn: &mut sqlx::PgConnection,
+    server_id: i32,
+) -> Result<PodModel, sqlx::Error> {
+    let pod = sqlx::query_as::<_, PodModel>(
+        "SELECT * FROM pod WHERE id = (SELECT pod_id FROM server WHERE id = $1)",
+    )
+    .bind(server_id)
+    .fetch_one(&mut *conn)
+    .await?;
     Ok(pod)
 }
 
@@ -44,7 +52,10 @@ pub struct CreatePod {
     pub env_vars: Vec<EnvVar>,
 }
 
-pub async fn create_pod(conn: &mut sqlx::PgConnection, pod: CreatePod) -> Result<PodModel, sqlx::Error> {
+pub async fn create_pod(
+    conn: &mut sqlx::PgConnection,
+    pod: CreatePod,
+) -> Result<PodModel, sqlx::Error> {
     let pod = sqlx::query_as::<_, PodModel>(
         "INSERT INTO pod (name, images, startup_command, installer_image, env_vars) VALUES ($1, $2, $3, $4, $5) RETURNING *"
     )
@@ -58,7 +69,10 @@ pub async fn create_pod(conn: &mut sqlx::PgConnection, pod: CreatePod) -> Result
     Ok(pod)
 }
 
-pub async fn update_pod(conn: &mut sqlx::PgConnection,pod: PodModel) -> Result<PodModel, sqlx::Error> {
+pub async fn update_pod(
+    conn: &mut sqlx::PgConnection,
+    pod: PodModel,
+) -> Result<PodModel, sqlx::Error> {
     let pod = sqlx::query_as::<_, PodModel>(
         "UPDATE pod SET name = $1, images = $2, startup_command = $3, installer_image = $4, env_vars = $5 WHERE id = $6 RETURNING *"
     )

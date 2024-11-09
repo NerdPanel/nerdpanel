@@ -3,11 +3,13 @@ use common::orch_types::{Node, NodePort};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
-    models::{node::{self, CreateNode, NodeModel}, node_port::{self, CreateNodePort}},
+    models::{
+        node::{self, CreateNode, NodeModel},
+        node_port::{self, CreateNodePort},
+    },
     utils::{node_model_to_node, AppError, DbConn},
     AppState,
 };
-
 
 pub fn nodes_router() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
@@ -91,10 +93,7 @@ pub async fn update_node(
     responses((status = OK),(status = INTERNAL_SERVER_ERROR, body = String)),
     tag = super::NODE_TAG
 )]
-pub async fn delete_node(
-    DbConn(mut conn): DbConn,
-    Path(id): Path<i32>,
-) -> Result<(), AppError> {
+pub async fn delete_node(DbConn(mut conn): DbConn, Path(id): Path<i32>) -> Result<(), AppError> {
     node::delete_node(&mut conn, id).await?;
     Ok(())
 }
@@ -127,7 +126,7 @@ pub async fn create_node_port(
     DbConn(mut conn): DbConn,
     Json(node_port): Json<CreateNodePort>,
 ) -> Result<(StatusCode, Json<NodePort>), AppError> {
-    let node_port = node_port::create_node_port(&mut conn,node_id,node_port).await?;
+    let node_port = node_port::create_node_port(&mut conn, node_id, node_port).await?;
     Ok((StatusCode::CREATED, Json(node_port.into())))
 }
 

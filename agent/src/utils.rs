@@ -58,9 +58,12 @@ pub fn container_options(
         open_stdin: Some(true),
         cmd: Some({
             let mut cmd = vec![];
-            server.startup_command.split_ascii_whitespace().for_each(|s| {
-                cmd.push(s.to_string());
-            });
+            server
+                .startup_command
+                .split_ascii_whitespace()
+                .for_each(|s| {
+                    cmd.push(s.to_string());
+                });
             cmd
         }),
         env: Some({
@@ -73,7 +76,10 @@ pub fn container_options(
         host_config: Some(host_config),
         exposed_ports: {
             let mut map = ::std::collections::HashMap::new();
-            map.insert(format!("{}/tcp", server.primary_port.port), ::std::collections::HashMap::new());
+            map.insert(
+                format!("{}/tcp", server.primary_port.port),
+                ::std::collections::HashMap::new(),
+            );
             for port_binding in &server.additional_ports {
                 map.insert(
                     format!("{}/tcp", port_binding.port),

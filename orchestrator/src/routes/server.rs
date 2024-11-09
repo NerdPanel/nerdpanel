@@ -92,11 +92,14 @@ pub async fn create_server(
     let server = server::create_server(&mut conn, server).await?;
     let node = get_node_from_server_id(server.id, &mut conn).await?;
     let server = server_model_to_server(server, &mut conn).await?;
-    reqwest::Client::new()
+    let res = reqwest::Client::new()
         .post(format!("http://{}/server", node.fqdn))
         .json(&server)
         .send()
         .await?;
+    if res.status() != StatusCode::OK {
+        return Err(AppError::NodeError(res.text().await?));
+    }
     Ok(Json(server))
 }
 
@@ -113,11 +116,14 @@ pub async fn update_server(
     let server = server::update_server(&mut conn, server).await?;
     let node = get_node_from_server_id(server.id, &mut conn).await?;
     let server = server_model_to_server(server, &mut conn).await?;
-    reqwest::Client::new()
+    let res = reqwest::Client::new()
         .put(format!("http://{}/server", node.fqdn))
         .json(&server)
         .send()
         .await?;
+    if res.status() != StatusCode::OK {
+        return Err(AppError::NodeError(res.text().await?));
+    }
     Ok(Json(server))
 }
 
@@ -128,15 +134,15 @@ pub async fn update_server(
     responses((status = OK), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = super::SERVER_TAG
 )]
-pub async fn delete_server(
-    Path(id): Path<i32>,
-    DbConn(mut conn): DbConn,
-) -> Result<(), AppError> {
+pub async fn delete_server(Path(id): Path<i32>, DbConn(mut conn): DbConn) -> Result<(), AppError> {
     let node = get_node_from_server_id(id, &mut conn).await?;
-    reqwest::Client::new()
+    let res = reqwest::Client::new()
         .delete(format!("http://{}/server/{}", node.fqdn, id))
         .send()
         .await?;
+    if res.status() != StatusCode::OK {
+        return Err(AppError::NodeError(res.text().await?));
+    }
     server::delete_server(&mut conn, id).await?;
     Ok(())
 }
@@ -154,10 +160,11 @@ pub async fn status(
     DbConn(mut conn): DbConn,
 ) -> Result<Json<ServerStatus>, AppError> {
     let node = get_node_from_server_id(id, &mut conn).await?;
-    let status: ServerStatus = reqwest::get(format!("http://{}/server/{}", node.fqdn, id))
-        .await?
-        .json()
-        .await?;
+    let res = reqwest::get(format!("http://{}/server/{}", node.fqdn, id)).await?;
+    if res.status() != StatusCode::OK {
+        return Err(AppError::NodeError(res.text().await?));
+    }
+    let status: ServerStatus = res.json().await?;
     Ok(Json(status))
 }
 
@@ -174,11 +181,14 @@ pub async fn signal(
     Json(body): Json<ServerSignal>,
 ) -> Result<(), AppError> {
     let node = get_node_from_server_id(id, &mut conn).await?;
-    reqwest::Client::new()
+    let res = reqwest::Client::new()
         .post(format!("http://{}/server/{}/signal", node.fqdn, id))
         .json(&body)
         .send()
         .await?;
+    if res.status() != StatusCode::OK {
+        return Err(AppError::NodeError(res.text().await?));
+    }
     Ok(())
 }
 
