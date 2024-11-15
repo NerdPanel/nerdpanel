@@ -29,6 +29,17 @@ pub async fn get_servers(conn: &mut PgConnection) -> Result<Vec<ServerModel>, sq
     Ok(servers)
 }
 
+pub async fn get_servers_by_user(
+    conn: &mut PgConnection,
+    user_id: i32,
+) -> Result<Vec<ServerModel>, sqlx::Error> {
+    let servers = sqlx::query_as::<_, ServerModel>("SELECT * FROM server WHERE owner_id = $1")
+        .bind(user_id)
+        .fetch_all(&mut *conn)
+        .await?;
+    Ok(servers)
+}
+
 pub async fn get_server_by_id(
     conn: &mut PgConnection,
     id: i32,

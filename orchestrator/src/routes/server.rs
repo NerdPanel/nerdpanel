@@ -9,6 +9,7 @@ use utoipa_axum::{
 };
 
 use crate::{
+    auth::AuthSession,
     models::server::{self, CreateServer, UpdateServer, UpdateServerStaff},
     utils::{
         auth::{require_server_owner_staff, require_server_owner_staff_path, require_staff},
@@ -48,8 +49,16 @@ pub fn server_router(state: AppState) -> OpenApiRouter<AppState> {
     responses((status = OK, body = [Server]), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = super::SERVER_TAG
 )]
-pub async fn get_servers(DbConn(mut conn): DbConn) -> Result<Json<Vec<Server>>, AppError> {
-    let servers = server::get_servers(&mut conn).await?;
+pub async fn get_servers(
+    session: AuthSession,
+    DbConn(mut conn): DbConn,
+) -> Result<Json<Vec<Server>>, AppError> {
+    let user = session.user.unwrap();
+    let servers = if user.staff {
+        server::get_servers(&mut conn).await?
+    } else {
+        server::get_servers_by_user(&mut conn, user.id).await?
+    };
 
     let servers: Vec<Server> = {
         let mut new = vec![];

@@ -2,7 +2,10 @@ use axum::{extract::Path, middleware, Json};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
-    auth::AuthSession, models::user::{self, CreateUser, UpdateUser, User}, utils::{auth::require_staff, AppError, DbConn}, AppState
+    auth::AuthSession,
+    models::user::{self, CreateUser, UpdateUser, User},
+    utils::{auth::require_staff, AppError, DbConn},
+    AppState,
 };
 
 pub fn user_router() -> OpenApiRouter<AppState> {
@@ -11,7 +14,6 @@ pub fn user_router() -> OpenApiRouter<AppState> {
         .routes(routes!(get_user, delete_user))
         .route_layer(middleware::from_fn(require_staff))
         .routes(routes!(get_self_user))
-
 }
 
 #[utoipa::path(
@@ -51,7 +53,10 @@ pub async fn get_user(
     responses((status = OK, body = User), (status = INTERNAL_SERVER_ERROR, body = String)),
     tag = super::USER_TAG
 )]
-pub async fn get_self_user(auth: AuthSession, DbConn(mut conn): DbConn) -> Result<Json<User>, AppError> {
+pub async fn get_self_user(
+    auth: AuthSession,
+    DbConn(mut conn): DbConn,
+) -> Result<Json<User>, AppError> {
     let user_id = auth.user.unwrap().id;
     let user = user::get_user_by_id(&mut conn, user_id).await?.unwrap();
     Ok(Json(user))
