@@ -20,40 +20,44 @@
             })
                 .then((response) => {
                     if (response.ok) {
-                        // TODO Redirect the user to the dashboard page
-                        // window.location.href = '/dashboard';
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const next = urlParams.get('next');
+                        window.location.href = next ? next : '/';
                     } else {
-                        // Show an error message to the user
-                        console.error('Invalid username or password');
+                        // TODO proper alerts
+                        alert('Invalid username or password');
                     }
                 })
                 .catch((error) => {
-                    // Show an error message to the user
-                    console.error('An error occurred while logging in', error);
+                    // TODO proper alerts
+                    alert('An error occurred while logging in');
+                    console.error(error);
                 });
         } else {
-            // Show an error message to the user
-            console.error('Please enter your username and password');
+            // TODO proper alerts
+            alert('Please enter a username and password');
         }
     }
 </script>
 
-<Card.Root class="flex max-w-sm flex-col justify-center">
-    <Card.Header>
-        <Card.Title class="text-2xl">Login</Card.Title>
-        <Card.Description>Enter your username below to login to your account.</Card.Description>
-    </Card.Header>
-    <Card.Content class="grid gap-4">
-        <div class="grid gap-2">
-            <Label for="username">username</Label>
-            <Input id="username" type="username" required />
-        </div>
-        <div class="grid gap-2">
-            <Label for="password">Password</Label>
-            <Input id="password" type="password" required />
-        </div>
-    </Card.Content>
-    <Card.Footer>
-        <Button class="w-full" onclick={login}>Sign in</Button>
-    </Card.Footer>
-</Card.Root>
+<div class="flex flex-1 items-center justify-center align-middle">
+    <Card.Root class="flex max-w-sm flex-col justify-center">
+        <Card.Header>
+            <Card.Title class="text-2xl">Login</Card.Title>
+            <Card.Description>Enter your username below to login to your account.</Card.Description>
+        </Card.Header>
+        <Card.Content class="grid gap-4">
+            <div class="grid gap-2">
+                <Label for="username">username</Label>
+                <Input id="username" type="username" required />
+            </div>
+            <div class="grid gap-2">
+                <Label for="password">Password</Label>
+                <Input id="password" type="password" required />
+            </div>
+        </Card.Content>
+        <Card.Footer>
+            <Button class="w-full" onclick={login}>Sign in</Button>
+        </Card.Footer>
+    </Card.Root>
+</div>

@@ -3,7 +3,7 @@
     let { children } = $props();
 </script>
 
-<div class="min-h-screen bg-cyan-800">
+<div class="flex min-h-screen flex-col bg-cyan-800">
     <nav class="flex items-center justify-between bg-primary p-4 text-white">
         <div class="logo">
             <a href="/">Logo</a>
@@ -14,7 +14,7 @@
             <li><a href="/settings">Settings </a></li>
         </ul>
     </nav>
-    <div class="container mx-auto my-6">
+    <div class="container mx-auto my-6 flex flex-1">
         {@render children()}
     </div>
 </div>
