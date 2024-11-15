@@ -1,6 +1,12 @@
 <script lang="ts">
+    import { fetchWithCreds } from '$lib/utils';
     import '../app.css';
     let { children, data } = $props();
+    function logout() {
+        fetchWithCreds('http://localhost:3000/api/auth/logout').then(() => {
+            window.location.href = '/';
+        });
+    }
 </script>
 
 <div class="flex min-h-screen flex-col bg-cyan-800">
@@ -14,7 +20,7 @@
             {#if !data.user}
                 <li><a href="/login">Login</a></li>
             {:else}
-                <li><a href="/logout">Logout</a></li>
+                <li><button type="button" onclick={logout}>Logout</button></li>
             {/if}
             {#if data.user?.staff}
                 <li><a href="/admin">Admin</a></li>
