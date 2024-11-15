@@ -8,9 +8,7 @@
         EthernetPort,
         HardDrive,
         MemoryStick,
-
         SquareChevronRight
-
     } from 'lucide-svelte';
     import type { PageData } from './$types';
     import ServerInfoCard from '$lib/components/server_info_card/server_info_card.svelte';
@@ -21,18 +19,18 @@
 
 <div class="grid grid-cols-5 gap-x-4">
     <div class="col-span-4">
-        <h1 class="font-bold">{data.server.name}</h1>
+        <h1 class="text-xl font-bold text-slate-500">{data.server.name}</h1>
     </div>
     <div class="flex flex-1 flex-row justify-center space-x-4">
         <Button class="flex-1">Stop</Button>
         <Button class="flex-1">Restart</Button>
         <Button class="flex-1" variant="destructive">Kill</Button>
     </div>
-    <div class="flex flex-col col-span-4 my-2 rounded bg-slate-700 p-4 space-y-2">
-        <div class="rounded grow bg-slate-600 p-4">CONSOLE</div>
-        <div class="flex flex-row w-full h-8 bg-slate-600 text-white p-1 rounded space-x-2">
-            <SquareChevronRight color={"#1e293b"}/>
-            <input class="bg-transparent w-full outline-none">
+    <div class="col-span-4 my-2 flex flex-col space-y-2 rounded bg-slate-700 p-4">
+        <div class="grow rounded bg-slate-600 p-4">CONSOLE</div>
+        <div class="flex h-8 w-full flex-row space-x-2 rounded bg-slate-600 p-1 text-white">
+            <SquareChevronRight color={'#1e293b'} />
+            <input class="w-full bg-transparent outline-none" />
         </div>
     </div>
     <div>

@@ -1,11 +1,11 @@
 <script lang="ts">
     import { EthernetPort, Server } from 'lucide-svelte';
 
-    let { server }: {server: any} = $props();
+    let { server }: { server: any } = $props();
 </script>
 
 <a href="/servers/{server.id}">
-    <div class="my-4 rounded bg-cyan-700 p-6">
+    <div class="my-4 rounded bg-slate-500 p-6">
         <div class="ml-4 flex flex-row justify-between">
             <div class="flex flex-row space-x-4">
                 <Server />
