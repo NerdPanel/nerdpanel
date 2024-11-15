@@ -3,6 +3,7 @@
     import * as Card from "$lib/components/ui/card/index.js";
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
+	import { fetchWithCreds } from "$lib/utils";
 
     function login() {
         const username = (document.getElementById('username') as HTMLInputElement).value;
@@ -10,7 +11,7 @@
 
         if (username && password) {
             // Perform login logic here, e.g., send a request to the server
-            fetch('http://localhost:3000/api/auth/login', {
+            fetchWithCreds('http://localhost:3000/api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
