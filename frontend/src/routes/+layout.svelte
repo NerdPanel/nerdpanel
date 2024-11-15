@@ -1,9 +1,8 @@
 <script lang="ts">
-    import { fetchWithCreds } from '$lib/utils';
     import '../app.css';
     let { children, data } = $props();
     function logout() {
-        fetchWithCreds('http://localhost:3000/api/auth/logout').then(() => {
+        fetch('http://localhost:3000/api/auth/logout', {credentials: 'include'}).then(() => {
             window.location.href = '/';
         });
     }
@@ -15,7 +14,7 @@
             <a href="/">Logo</a>
         </div>
         <ul class="flex space-x-4">
-            <li><a href="/home">Home</a></li>
+            <li><a href="/">Home</a></li>
             <li><a href="/servers">Servers</a></li>
             {#if !data.user}
                 <li><a href="/login">Login</a></li>
