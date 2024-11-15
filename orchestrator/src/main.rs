@@ -4,15 +4,12 @@ use axum::{
     http::{HeaderName, HeaderValue, Method},
 };
 use axum_login::{
-    tower_sessions::{cookie::SameSite, MemoryStore, SessionManagerLayer},
+    tower_sessions::{MemoryStore, SessionManagerLayer},
     AuthManagerLayerBuilder,
 };
 use routes::ApiDoc;
 use sqlx::PgPool;
-use tower_http::{
-    cors::CorsLayer,
-    trace::TraceLayer,
-};
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 use utoipa::OpenApi;
@@ -64,8 +61,7 @@ async fn main() {
     // Session layer.
     let session_store = MemoryStore::default();
     // TODO - make proper SameSite and Secure settings
-    let session_layer = SessionManagerLayer::new(session_store)
-        .with_secure(false);
+    let session_layer = SessionManagerLayer::new(session_store).with_secure(false);
     // Auth service.
     let backend = AuthBackend { db: db.clone() };
     let auth_layer = AuthManagerLayerBuilder::new(backend, session_layer).build();

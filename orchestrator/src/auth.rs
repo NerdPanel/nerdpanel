@@ -18,7 +18,7 @@ impl AuthUser for User {
     }
 
     fn session_auth_hash(&self) -> &[u8] {
-        &self.pw_hash.as_bytes()
+        self.pw_hash.as_bytes()
     }
 }
 
