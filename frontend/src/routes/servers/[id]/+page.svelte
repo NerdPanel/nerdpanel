@@ -26,10 +26,10 @@
         <Button class="flex-1">Restart</Button>
         <Button class="flex-1" variant="destructive">Kill</Button>
     </div>
-    <div class="col-span-4 my-2 flex flex-col space-y-2 rounded bg-slate-700 p-4">
-        <div class="grow rounded bg-slate-600 p-4">CONSOLE</div>
-        <div class="flex h-8 w-full flex-row space-x-2 rounded bg-slate-600 p-1 text-white">
-            <SquareChevronRight color={'#1e293b'} />
+    <div class="col-span-4 my-2 flex flex-col space-y-2">
+        <div class="grow rounded bg-slate-800 p-4">CONSOLE</div>
+        <div class="flex h-8 w-full flex-row space-x-2 rounded bg-slate-800 p-1 text-white">
+            <SquareChevronRight class="text-gray-950" />
             <input class="w-full bg-transparent outline-none" />
         </div>
     </div>

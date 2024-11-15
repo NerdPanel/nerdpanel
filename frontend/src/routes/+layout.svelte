@@ -8,7 +8,7 @@
     }
 </script>
 
-<div class="flex min-h-screen flex-col bg-slate-800">
+<div class="flex min-h-screen flex-col bg-background">
     <nav class="flex items-center justify-between bg-slate-900 p-4 text-white">
         <div class="logo">
             <a href="/">Logo</a>
