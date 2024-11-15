@@ -8,8 +8,8 @@
     }
 </script>
 
-<div class="flex min-h-screen flex-col bg-cyan-800">
-    <nav class="flex items-center justify-between bg-primary p-4 text-white">
+<div class="flex min-h-screen flex-col bg-slate-800">
+    <nav class="flex items-center justify-between bg-slate-900 p-4 text-white">
         <div class="logo">
             <a href="/">Logo</a>
         </div>

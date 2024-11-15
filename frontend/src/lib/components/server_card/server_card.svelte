@@ -1,7 +1,7 @@
 <script lang="ts">
     import { EthernetPort, Server } from 'lucide-svelte';
 
-    let { server } = $props();
+    let { server }: {server: any} = $props();
 </script>
 
 <a href="/servers/{server.id}">
