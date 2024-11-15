@@ -1,6 +1,6 @@
 import type { LayoutLoad } from './$types';
 
-export const load = (async ({fetch}) => {
+export const load = (async ({ fetch }) => {
     // TODO fix when cors is enabled
     let data = await fetch('http://localhost:3000/api/user/self', { credentials: 'include' }).then(
         async (res) => {
