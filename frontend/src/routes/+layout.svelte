@@ -2,7 +2,7 @@
     import '../app.css';
     let { children, data } = $props();
     function logout() {
-        fetch('http://localhost:3000/api/auth/logout', { credentials: 'include' }).then(() => {
+        fetch('/api/auth/logout').then(() => {
             window.location.href = '/';
         });
     }

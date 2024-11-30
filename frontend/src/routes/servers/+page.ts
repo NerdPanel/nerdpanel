@@ -1,7 +1,7 @@
 import type { PageLoad } from './$types';
 
 export const load = (async ({ fetch }) => {
-    let servers = await fetch('http://localhost:3000/api/server', { credentials: 'include' }).then(
+    let servers = await fetch('api/server').then(
         async (res) => {
             if (res.ok) {
                 return await res.json();

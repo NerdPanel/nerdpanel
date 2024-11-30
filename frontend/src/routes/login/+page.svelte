@@ -9,14 +9,12 @@
         const password = (document.getElementById('password') as HTMLInputElement).value;
 
         if (username && password) {
-            fetch('http://localhost:3000/api/auth/login', {
+            fetch('api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ username, password }),
-                // TODO fix when cors is enabled
-                credentials: 'include'
             })
                 .then((response) => {
                     if (response.ok) {
