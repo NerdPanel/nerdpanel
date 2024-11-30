@@ -1,3 +1,12 @@
+-- User
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    pw_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    staff BOOLEAN NOT NULL
+);
+
 -- Node
 CREATE TABLE node (
     id SERIAL PRIMARY KEY,
@@ -17,8 +26,8 @@ CREATE TYPE image_type AS (
     tag TEXT
 );
 
--- platform
-CREATE TABLE platform (
+-- Pod
+CREATE TABLE pod (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     images image_type[] NOT NULL,
@@ -32,12 +41,13 @@ CREATE TABLE server (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     node_id INTEGER NOT NULL REFERENCES node(id),
+    owner_id INTEGER NOT NULL REFERENCES users(id),
 
     cpu_limit INTEGER,
     memory_limit INTEGER,
     disk_limit INTEGER,
 
-    platform_id INTEGER NOT NULL REFERENCES platform(id),
+    pod_id INTEGER NOT NULL REFERENCES pod(id),
     image VARCHAR(255) NOT NULL,
     startup_command TEXT NOT NULL,
     env_vars env_var_type[] NOT NULL

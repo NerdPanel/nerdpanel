@@ -4,10 +4,23 @@ use axum::{
     http::{request::Parts, StatusCode},
 };
 use axum_thiserror::ErrorStatus;
+use common::orch_types::{Node, Server};
 use sqlx::{pool::PoolConnection, Postgres};
 use thiserror::Error;
 
-use crate::AppState;
+use crate::{
+    models::{
+        node::{self, NodeModel},
+        node_port::{
+            get_node_ports_by_node_id, get_node_ports_by_server_id,
+            get_primary_node_port_by_server_id,
+        },
+        server::{self, ServerModel},
+    },
+    AppState,
+};
+
+pub mod auth;
 
 pub struct DbConn(pub PoolConnection<Postgres>);
 
@@ -30,6 +43,58 @@ impl FromRequestParts<AppState> for DbConn {
     }
 }
 
+pub async fn get_node_from_server_id(
+    server_id: i32,
+    conn: &mut PoolConnection<Postgres>,
+) -> Result<NodeModel, sqlx::Error> {
+    let server = server::get_server_by_id(conn, server_id).await?;
+    let node = node::get_node_by_id(conn, server.node_id).await?;
+    Ok(node)
+}
+
+pub async fn server_model_to_server(
+    server: ServerModel,
+    conn: &mut PoolConnection<Postgres>,
+) -> Result<Server, sqlx::Error> {
+    let is_primary = get_primary_node_port_by_server_id(conn, server.id).await?;
+    let mut additional_ports = get_node_ports_by_server_id(conn, server.id).await?;
+    additional_ports.retain(|port| !port.is_primary);
+    Ok(Server {
+        id: server.id,
+        node_id: server.node_id,
+        name: server.name,
+        owner_id: server.owner_id,
+        cpu_limit: server.cpu_limit,
+        memory_limit: server.memory_limit,
+        disk_limit: server.disk_limit,
+        primary_port: is_primary.into(),
+        additional_ports: additional_ports
+            .into_iter()
+            .map(|port| port.into())
+            .collect(),
+        pod_id: server.pod_id,
+        image: server.image,
+        startup_command: server.startup_command,
+        env_vars: server.env_vars,
+    })
+}
+
+pub async fn node_model_to_node(
+    node: NodeModel,
+    conn: &mut PoolConnection<Postgres>,
+) -> Result<Node, sqlx::Error> {
+    Ok(Node {
+        id: node.id,
+        name: node.name,
+        fqdn: node.fqdn,
+        ports: get_node_ports_by_node_id(conn, node.id)
+            .await?
+            .into_iter()
+            .map(|port| port.into())
+            .collect(),
+    })
+}
+
 #[derive(Error, Debug, ErrorStatus)]
 pub enum AppError {
     #[error("Internal Server Error")]
@@ -41,6 +106,15 @@ pub enum AppError {
     #[error("not found")]
     #[status(StatusCode::NOT_FOUND)]
     NotFound,
+    #[error("error connecting to agent")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
+    NodeRequestError(reqwest::Error),
+    #[error("Node Error: {0}")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
+    NodeError(String),
+    #[error("Internal server error")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
+    HashError,
     #[error("Unauthorized")]
     #[status(StatusCode::UNAUTHORIZED)]
     Unauthorized,
@@ -55,5 +129,12 @@ impl From<sqlx::Error> for AppError {
                 Self::DatabaseError(e)
             }
         }
+    }
+}
+
+impl From<reqwest::Error> for AppError {
+    fn from(e: reqwest::Error) -> Self {
+        tracing::error!("Error connecting to agent: {:?}", e);
+        Self::NodeRequestError(e)
     }
 }
